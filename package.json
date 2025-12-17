@@ -1,0 +1,24 @@
+{
+  "name": "worktree-cli",
+  "version": "0.1.0",
+  "description": "Interactive TUI for managing git worktrees",
+  "type": "module",
+  "bin": {
+    "wt": "./src/index.tsx"
+  },
+  "scripts": {
+    "start": "bun run src/index.tsx",
+    "dev": "bun --watch run src/index.tsx"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/react": "^19.2.7"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "ink": "^6.5.1",
+    "react": "^19.2.3"
+  }
+}
