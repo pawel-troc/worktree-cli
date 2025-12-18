@@ -6,6 +6,7 @@ Interactive TUI for managing git worktrees.
 
 - List all worktrees with branch and path info
 - Create worktrees from existing branches or new branches
+- Enforced branch naming convention (`feature/` or `bugfix/` prefixes)
 - Delete worktrees with optional branch cleanup
 - Wizard-based guided workflows for create/delete operations
 - Post-create actions (open terminal, editor, etc.)
@@ -52,6 +53,11 @@ wt
 - `↑/↓` - Navigate options
 - `Enter` - Confirm selection
 - `Esc` - Cancel/Go back
+
+When creating a new branch, the wizard enforces a naming convention:
+1. Select branch type: `feature/` or `bugfix/`
+2. Enter branch name (e.g., `my-feature`)
+3. Final branch name will be `feature/my-feature` or `bugfix/my-feature`
 
 **Delete Wizard:**
 - `↑/↓` - Navigate options

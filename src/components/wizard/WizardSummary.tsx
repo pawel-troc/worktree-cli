@@ -56,7 +56,7 @@ export function WizardSummary<TData extends Record<string, unknown>>({
   const formatStepValue = (step: WizardStep<TData>): string => {
     const value = data[step.dataKey];
     if (step.formatValue) {
-      return step.formatValue(value);
+      return step.formatValue(value, data);
     }
     if (value === undefined || value === null) {
       return "(not set)";
