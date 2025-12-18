@@ -1,6 +1,6 @@
 {
   "name": "worktree-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Interactive TUI for managing git worktrees",
   "license": "MIT",
   "type": "module",
@@ -9,7 +9,10 @@
   },
   "scripts": {
     "start": "bun run src/index.tsx",
-    "dev": "bun --watch run src/index.tsx"
+    "dev": "bun --watch run src/index.tsx",
+    "version:patch": "npm version patch --no-git-tag-version",
+    "version:minor": "npm version minor --no-git-tag-version",
+    "version:major": "npm version major --no-git-tag-version"
   },
   "devDependencies": {
     "@types/bun": "latest",
