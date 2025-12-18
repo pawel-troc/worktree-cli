@@ -24,7 +24,7 @@ interface BaseStep<TData> {
   dataKey: keyof TData;
   validate?: (value: unknown, data: Partial<TData>) => string | null;
   skipIf?: (data: Partial<TData>) => boolean;
-  formatValue?: (value: unknown) => string;
+  formatValue?: (value: unknown, data?: Partial<TData>) => string;
 }
 
 /**

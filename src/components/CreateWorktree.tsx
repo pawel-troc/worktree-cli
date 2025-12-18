@@ -7,6 +7,7 @@ import type { WizardStep } from "../types/wizard.ts";
 interface CreateWorktreeData extends Record<string, unknown> {
   mode: "existing" | "new";
   branch: string;
+  branchType: "feature" | "bugfix";
   newBranchName: string;
   pathChoice: "default" | "custom";
   customPath: string;
@@ -85,20 +86,39 @@ export function CreateWorktree({
         })),
       },
 
-      // Step 2b: New branch name (for new mode)
+      // Step 2b: Branch type selection (for new mode)
+      {
+        id: "branchType",
+        type: "selection",
+        label: "Branch type",
+        dataKey: "branchType",
+        prompt: "Select branch type:",
+        skipIf: (data) => data.mode === "existing",
+        options: [
+          { value: "feature", label: "feature/" },
+          { value: "bugfix", label: "bugfix/" },
+        ],
+        formatValue: (v) => `${v}/`,
+      },
+
+      // Step 2c: New branch name (for new mode)
       {
         id: "newBranchName",
         type: "text",
         label: "New branch",
         dataKey: "newBranchName",
-        prompt: "Enter new branch name:",
-        placeholder: "feature/my-branch",
+        prompt: "Enter branch name:",
+        placeholder: "my-branch-name",
         skipIf: (data) => data.mode === "existing",
         validate: (value) => {
           if (!value || (value as string).trim() === "") {
             return "Branch name is required";
           }
           return null;
+        },
+        formatValue: (value, data) => {
+          const branchType = data?.branchType || "feature";
+          return `${branchType}/${value}`;
         },
       },
 
@@ -141,19 +161,21 @@ export function CreateWorktree({
   const handleComplete = async (data: CreateWorktreeData) => {
     // Compute final path
     let finalPath: string;
+    const fullBranchName = `${data.branchType}/${data.newBranchName}`;
+    
     if (data.pathChoice === "custom") {
       finalPath = data.customPath;
     } else {
       // Recompute path based on final branch selection
       const branchName =
-        data.mode === "existing" ? data.branch : data.newBranchName;
+        data.mode === "existing" ? data.branch : fullBranchName;
       finalPath = await getWorktreePath(branchName);
     }
 
     if (data.mode === "existing") {
       onSubmit({ path: finalPath, branch: data.branch });
     } else {
-      onSubmit({ path: finalPath, newBranch: data.newBranchName });
+      onSubmit({ path: finalPath, newBranch: fullBranchName });
     }
   };
 
@@ -163,7 +185,7 @@ export function CreateWorktree({
     const branchName =
       data.mode === "existing"
         ? data.branch || localBranches[0]?.name || ""
-        : data.newBranchName || "new-branch";
+        : `${data.branchType || "feature"}/${data.newBranchName || "new-branch"}`;
     if (branchName !== currentBranch) {
       setCurrentBranch(branchName);
     }
@@ -179,6 +201,7 @@ export function CreateWorktree({
       initialData={{
         mode: "existing",
         branch: localBranches[0]?.name || "",
+        branchType: "feature",
         newBranchName: "",
         pathChoice: "default",
         customPath: "",
