@@ -1,6 +1,10 @@
-# worktree-cli
+<p align="center">
+  <img src="assets/logo.png" alt="worktree-cli logo" />
+</p>
 
-Interactive TUI for managing git worktrees.
+<p align="center">
+  Interactive TUI for managing git worktrees.
+</p>
 
 ## Features
 
