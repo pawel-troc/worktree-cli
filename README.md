@@ -10,6 +10,8 @@ Interactive TUI for managing git worktrees.
 - Wizard-based guided workflows for create/delete operations
 - Post-create actions (open terminal, editor, etc.)
 - Configurable default worktree storage location
+- Automatic file copying to new worktrees (e.g., `.env` files)
+- First-run setup wizard
 - Arrow key navigation
 
 ## Installation
@@ -62,7 +64,8 @@ Config file: `~/.worktree-cli/config.json`
 ```json
 {
   "defaultWorktreePath": "~/.worktree-cli/worktrees/{repo}/{branch}",
-  "postCreateCommand": "open -a Terminal {path}"
+  "postCreateCommand": "open -a Terminal {path}",
+  "filesToCopy": [".env*"]
 }
 ```
 
@@ -73,6 +76,9 @@ Config file: `~/.worktree-cli/config.json`
   - `{branch}` - Branch name (slashes replaced with dashes)
 - `postCreateCommand` - Command to run after creating a worktree
   - `{path}` - Path to the created worktree
+- `filesToCopy` - Glob patterns for files to copy to new worktrees
+  - Useful for files not tracked by git (e.g., `.env`, `.env.local`)
+  - Supports glob patterns like `.env*`, `config/*.local.json`
 
 ## Project Structure
 
@@ -87,6 +93,7 @@ src/
 │   ├── DeleteBranchPrompt.tsx
 │   ├── PostCreatePrompt.tsx
 │   ├── Settings.tsx       # Settings editor
+│   ├── InitialSetup.tsx   # First-run setup wizard
 │   ├── Header.tsx
 │   ├── StatusBar.tsx
 │   └── wizard/            # Reusable wizard components

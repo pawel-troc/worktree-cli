@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Box, Text, useInput } from "ink";
-import { loadConfig, saveConfig, type Config } from "../utils/config.ts";
+import {
+  loadConfig,
+  saveConfig,
+  getDefaultConfig,
+  type Config,
+} from "../utils/config.ts";
 
-interface SettingsProps {
-  onClose: () => void;
+interface InitialSetupProps {
+  onComplete: () => void;
 }
 
 type SettingField = "defaultWorktreePath" | "postCreateCommand" | "filesToCopy";
@@ -51,41 +56,26 @@ function setFieldValue(
   return { ...config, [field]: value };
 }
 
-export function Settings({ onClose }: SettingsProps) {
-  const [config, setConfig] = useState<Config | null>(null);
-  const [selectedField, setSelectedField] = useState(0);
+export function InitialSetup({ onComplete }: InitialSetupProps) {
+  const [config, setConfig] = useState<Config>(getDefaultConfig());
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
-  const [saved, setSaved] = useState(false);
 
-  useEffect(() => {
-    loadConfig().then(setConfig);
-  }, []);
+  // Total items = fields + Save button
+  const totalItems = FIELDS.length + 1;
+  const isSaveSelected = selectedIndex === FIELDS.length;
 
   useInput((input, key) => {
-    if (!config) return;
-
-    if (key.escape) {
-      if (editing) {
-        setEditing(false);
-        setEditValue("");
-      } else {
-        onClose();
-      }
-      return;
-    }
-
     if (editing) {
       if (key.return) {
-        const field = FIELDS[selectedField];
+        const field = FIELDS[selectedIndex];
         if (field) {
-          const newConfig = setFieldValue(config, field, editValue);
-          setConfig(newConfig);
-          saveConfig(newConfig).then(() => {
-            setSaved(true);
-            setTimeout(() => setSaved(false), 2000);
-          });
+          setConfig(setFieldValue(config, field, editValue));
         }
+        setEditing(false);
+        setEditValue("");
+      } else if (key.escape) {
         setEditing(false);
         setEditValue("");
       } else if (key.backspace || key.delete) {
@@ -97,34 +87,44 @@ export function Settings({ onClose }: SettingsProps) {
     }
 
     if (key.upArrow) {
-      setSelectedField((i) => (i > 0 ? i - 1 : FIELDS.length - 1));
+      setSelectedIndex((i) => (i > 0 ? i - 1 : totalItems - 1));
     } else if (key.downArrow) {
-      setSelectedField((i) => (i < FIELDS.length - 1 ? i + 1 : 0));
+      setSelectedIndex((i) => (i < totalItems - 1 ? i + 1 : 0));
     } else if (key.return) {
-      const field = FIELDS[selectedField];
-      if (field) {
-        setEditValue(getFieldValue(config, field));
-        setEditing(true);
+      if (isSaveSelected) {
+        saveConfig(config).then(() => {
+          onComplete();
+        });
+      } else {
+        const field = FIELDS[selectedIndex];
+        if (field) {
+          setEditValue(getFieldValue(config, field));
+          setEditing(true);
+        }
       }
     }
   });
 
-  if (!config) {
-    return <Text>Loading settings...</Text>;
-  }
-
   return (
     <Box flexDirection="column">
+      <Box marginBottom={1} flexDirection="column">
+        <Text bold color="cyan">
+          Welcome to Worktree CLI
+        </Text>
+        <Text dimColor>
+          Let's configure your settings before getting started.
+        </Text>
+      </Box>
+
       <Box marginBottom={1}>
         <Text bold underline>
-          Settings
+          Configuration
         </Text>
-        {saved && <Text color="green"> (Saved!)</Text>}
       </Box>
 
       {FIELDS.map((field, i) => {
         const info = SETTINGS_INFO[field];
-        const isSelected = i === selectedField;
+        const isSelected = i === selectedIndex;
         const isEditing = isSelected && editing;
 
         return (
@@ -147,7 +147,7 @@ export function Settings({ onClose }: SettingsProps) {
                 </Text>
               )}
             </Box>
-            {isSelected && (
+            {isSelected && !editing && (
               <Box marginLeft={4}>
                 <Text dimColor italic>
                   {info.hint}
@@ -159,10 +159,17 @@ export function Settings({ onClose }: SettingsProps) {
       })}
 
       <Box marginTop={1}>
+        <Text color={isSaveSelected ? "green" : undefined} bold={isSaveSelected}>
+          {isSaveSelected ? "> " : "  "}
+          Save and Continue
+        </Text>
+      </Box>
+
+      <Box marginTop={1}>
         <Text dimColor>
           {editing
             ? "[Enter] Save • [Esc] Cancel"
-            : "[Enter] Edit • [↑↓] Navigate • [Esc] Back"}
+            : "[Enter] Edit/Select • [↑↓] Navigate"}
         </Text>
       </Box>
     </Box>

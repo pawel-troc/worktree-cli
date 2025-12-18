@@ -194,3 +194,47 @@ export async function removeBranch(branchName: string): Promise<void> {
     throw e;
   }
 }
+
+export async function getRepoRoot(): Promise<string> {
+  const result = await $`git rev-parse --show-toplevel`.text();
+  return result.trim();
+}
+
+export async function copyFilesToWorktree(
+  targetDir: string,
+  patterns: string[]
+): Promise<string[]> {
+  if (patterns.length === 0) {
+    return [];
+  }
+
+  const { Glob } = await import("bun");
+  const fs = await import("fs/promises");
+  const path = await import("path");
+
+  const sourceDir = await getRepoRoot();
+  const copiedFiles: string[] = [];
+
+  for (const pattern of patterns) {
+    const glob = new Glob(pattern);
+
+    for await (const file of glob.scan({ cwd: sourceDir, dot: true })) {
+      const sourcePath = path.join(sourceDir, file);
+      const targetPath = path.join(targetDir, file);
+
+      try {
+        // Ensure target directory exists
+        const targetFileDir = path.dirname(targetPath);
+        await fs.mkdir(targetFileDir, { recursive: true });
+
+        // Copy the file
+        await fs.copyFile(sourcePath, targetPath);
+        copiedFiles.push(file);
+      } catch {
+        // Skip files that can't be copied
+      }
+    }
+  }
+
+  return copiedFiles;
+}

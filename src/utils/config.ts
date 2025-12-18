@@ -8,11 +8,13 @@ const CONFIG_FILE = join(CONFIG_DIR, "config.json");
 export interface Config {
   defaultWorktreePath: string;
   postCreateCommand: string;
+  filesToCopy: string[];
 }
 
 const DEFAULT_CONFIG: Config = {
   defaultWorktreePath: "~/.worktree-cli/worktrees/{repo}/{branch}",
   postCreateCommand: "open -a Terminal {path}",
+  filesToCopy: [".env*"],
 };
 
 export async function ensureConfigDir(): Promise<void> {
@@ -35,6 +37,20 @@ export async function saveConfig(config: Config): Promise<void> {
   await ensureConfigDir();
   const fs = await import("fs/promises");
   await fs.writeFile(CONFIG_FILE, JSON.stringify(config, null, 2));
+}
+
+export async function isFirstRun(): Promise<boolean> {
+  try {
+    const fs = await import("fs/promises");
+    await fs.access(CONFIG_FILE);
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+export function getDefaultConfig(): Config {
+  return { ...DEFAULT_CONFIG };
 }
 
 export async function expandWorktreePath(

@@ -8,9 +8,20 @@ import { CreateWorktree } from "./components/CreateWorktree.tsx";
 import { DeleteWorktree } from "./components/DeleteWorktree.tsx";
 import { Settings } from "./components/Settings.tsx";
 import { PostCreatePrompt } from "./components/PostCreatePrompt.tsx";
+import { InitialSetup } from "./components/InitialSetup.tsx";
 import { useWorktrees } from "./hooks/useWorktrees.ts";
-import { getRepoName, isGitRepository, removeBranch } from "./utils/git.ts";
-import { ensureConfigDir, loadConfig, expandCommand } from "./utils/config.ts";
+import {
+  getRepoName,
+  isGitRepository,
+  removeBranch,
+  copyFilesToWorktree,
+} from "./utils/git.ts";
+import {
+  ensureConfigDir,
+  loadConfig,
+  expandCommand,
+  isFirstRun,
+} from "./utils/config.ts";
 import pkg from "../package.json";
 
 const VERSION = pkg.version;
@@ -24,6 +35,7 @@ export function App() {
   const [isGitRepo, setIsGitRepo] = useState(true);
   const [createdWorktreePath, setCreatedWorktreePath] = useState<string | null>(null);
   const [postCreateCommand, setPostCreateCommand] = useState<string>("");
+  const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
 
   const { worktrees, branches, loading, error, refresh, create, remove, clearError } =
     useWorktrees();
@@ -36,8 +48,14 @@ export function App() {
         const name = await getRepoName();
         setRepoName(name);
         await ensureConfigDir();
-        const config = await loadConfig();
-        setPostCreateCommand(config.postCreateCommand);
+
+        const firstRun = await isFirstRun();
+        setNeedsSetup(firstRun);
+
+        if (!firstRun) {
+          const config = await loadConfig();
+          setPostCreateCommand(config.postCreateCommand);
+        }
       }
     };
     init();
@@ -97,6 +115,11 @@ export function App() {
       const config = await loadConfig();
       setPostCreateCommand(config.postCreateCommand);
 
+      // Copy configured files to the new worktree
+      if (config.filesToCopy.length > 0) {
+        await copyFilesToWorktree(worktreePath, config.filesToCopy);
+      }
+
       if (config.postCreateCommand) {
         setCreatedWorktreePath(worktreePath);
         setView("postCreate");
@@ -134,6 +157,12 @@ export function App() {
     setView("list");
   };
 
+  const handleSetupComplete = async () => {
+    const config = await loadConfig();
+    setPostCreateCommand(config.postCreateCommand);
+    setNeedsSetup(false);
+  };
+
   const handleDelete = async (options: { force: boolean; deleteBranch: boolean }) => {
     const wt = worktrees[selectedIndex];
     if (!wt) return;
@@ -166,6 +195,20 @@ export function App() {
         </Text>
       </Box>
     );
+  }
+
+  // Show loading state while checking if setup is needed
+  if (needsSetup === null) {
+    return (
+      <Box>
+        <Text dimColor>Loading...</Text>
+      </Box>
+    );
+  }
+
+  // Show initial setup if this is the first run
+  if (needsSetup) {
+    return <InitialSetup onComplete={handleSetupComplete} />;
   }
 
   return (
