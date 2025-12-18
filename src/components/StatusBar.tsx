@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 
-export type View = "list" | "create" | "delete";
+export type View = "list" | "create" | "delete" | "settings" | "postCreate";
 
 interface StatusBarProps {
   view: View;
@@ -10,10 +10,14 @@ interface StatusBarProps {
 
 export function StatusBar({ view, error }: StatusBarProps) {
   const shortcuts: Record<View, string> = {
-    list: "[c] Create  [d] Delete  [r] Refresh  [q] Quit",
-    create: "[Enter] Confirm  [Esc] Cancel  [Tab] Next field",
-    delete: "[y] Confirm  [n/Esc] Cancel",
+    list: "[c] Create • [d] Delete • [r] Refresh • [s] Settings • [q] Quit",
+    create: "[Enter] Confirm • [Esc] Cancel • [↑↓] Select",
+    delete: "[Enter] Confirm • [Esc] Cancel • [↑↓] Select",
+    settings: "", // Settings component handles its own legend
+    postCreate: "[Enter] Confirm • [↑↓] Select • [Esc] Stay",
   };
+
+  const shortcutText = shortcuts[view];
 
   return (
     <Box flexDirection="column" marginTop={1}>
@@ -22,9 +26,11 @@ export function StatusBar({ view, error }: StatusBarProps) {
           <Text color="red">Error: {error}</Text>
         </Box>
       )}
-      <Box>
-        <Text dimColor>{shortcuts[view]}</Text>
-      </Box>
+      {shortcutText && (
+        <Box>
+          <Text dimColor>{shortcutText}</Text>
+        </Box>
+      )}
     </Box>
   );
 }

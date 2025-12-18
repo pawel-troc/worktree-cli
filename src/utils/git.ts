@@ -71,7 +71,8 @@ export async function getWorktrees(): Promise<Worktree[]> {
 }
 
 export async function getBranches(): Promise<Branch[]> {
-  const result = await $`git branch -a --format=%(refname:short)%09%(HEAD)`.text();
+  const format = "%(refname:short)%09%(HEAD)";
+  const result = await $`git branch -a --format=${format}`.text();
   const branches: Branch[] = [];
 
   for (const line of result.trim().split("\n")) {
@@ -94,31 +95,102 @@ export interface CreateWorktreeOptions {
   path: string;
   branch?: string;
   newBranch?: string;
-  commit?: string;
 }
 
-export async function createWorktree(options: CreateWorktreeOptions): Promise<void> {
-  const { path, branch, newBranch, commit } = options;
-
-  if (newBranch) {
-    await $`git worktree add -b ${newBranch} ${path} ${commit || "HEAD"}`;
-  } else if (branch) {
-    await $`git worktree add ${path} ${branch}`;
-  } else if (commit) {
-    await $`git worktree add --detach ${path} ${commit}`;
-  } else {
-    throw new Error("Must specify branch, newBranch, or commit");
+async function branchExists(branchName: string): Promise<boolean> {
+  try {
+    await $`git rev-parse --verify refs/heads/${branchName}`.quiet();
+    return true;
+  } catch {
+    return false;
   }
 }
 
+async function createBranch(branchName: string): Promise<void> {
+  try {
+    await $`git branch ${branchName}`.quiet();
+  } catch (e) {
+    if (e instanceof Error && "stderr" in e) {
+      const stderr = (e as { stderr: Buffer }).stderr.toString().trim();
+      throw new Error(stderr || `Failed to create branch ${branchName}`);
+    }
+    throw e;
+  }
+}
+
+async function deleteBranch(branchName: string): Promise<void> {
+  try {
+    await $`git branch -D ${branchName}`.quiet();
+  } catch {
+    // Ignore errors when deleting branch during rollback
+  }
+}
+
+export async function createWorktree(options: CreateWorktreeOptions): Promise<string> {
+  const { path, branch, newBranch } = options;
+
+  try {
+    if (newBranch) {
+      // Check if branch already exists
+      if (await branchExists(newBranch)) {
+        throw new Error(`A branch named '${newBranch}' already exists.`);
+      }
+
+      // Create the branch first
+      await createBranch(newBranch);
+
+      // Try to create the worktree
+      try {
+        await $`git worktree add ${path} ${newBranch}`.quiet();
+      } catch (e) {
+        // Rollback: delete the branch we just created
+        await deleteBranch(newBranch);
+        throw e;
+      }
+    } else if (branch) {
+      await $`git worktree add ${path} ${branch}`.quiet();
+    } else {
+      throw new Error("Must specify branch or newBranch");
+    }
+  } catch (e) {
+    if (e instanceof Error && "stderr" in e) {
+      const stderr = (e as { stderr: Buffer }).stderr.toString().trim();
+      throw new Error(stderr || "Failed to create worktree");
+    }
+    throw e;
+  }
+
+  return path;
+}
+
 export async function removeWorktree(path: string, force = false): Promise<void> {
-  if (force) {
-    await $`git worktree remove --force ${path}`;
-  } else {
-    await $`git worktree remove ${path}`;
+  try {
+    if (force) {
+      await $`git worktree remove --force ${path}`.quiet();
+    } else {
+      await $`git worktree remove ${path}`.quiet();
+    }
+  } catch (e) {
+    if (e instanceof Error && "stderr" in e) {
+      const stderr = (e as { stderr: Buffer }).stderr.toString().trim();
+      throw new Error(stderr || "Failed to remove worktree");
+    }
+    throw e;
   }
 }
 
 export async function pruneWorktrees(): Promise<void> {
-  await $`git worktree prune`;
+  await $`git worktree prune`.quiet();
+}
+
+export async function removeBranch(branchName: string): Promise<void> {
+  try {
+    await $`git branch -D ${branchName}`.quiet();
+  } catch (e) {
+    if (e instanceof Error && "stderr" in e) {
+      const stderr = (e as { stderr: Buffer }).stderr.toString().trim();
+      throw new Error(stderr || `Failed to delete branch ${branchName}`);
+    }
+    throw e;
+  }
 }

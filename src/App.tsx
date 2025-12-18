@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { Box, Text, useApp, useInput } from "ink";
+import { spawn } from "child_process";
 import { Header } from "./components/Header.tsx";
 import { StatusBar, type View } from "./components/StatusBar.tsx";
 import { WorktreeList } from "./components/WorktreeList.tsx";
 import { CreateWorktree } from "./components/CreateWorktree.tsx";
 import { DeleteWorktree } from "./components/DeleteWorktree.tsx";
+import { Settings } from "./components/Settings.tsx";
+import { PostCreatePrompt } from "./components/PostCreatePrompt.tsx";
 import { useWorktrees } from "./hooks/useWorktrees.ts";
-import { getRepoName, isGitRepository } from "./utils/git.ts";
-import { ensureConfigDir } from "./utils/config.ts";
+import { getRepoName, isGitRepository, removeBranch } from "./utils/git.ts";
+import { ensureConfigDir, loadConfig, expandCommand } from "./utils/config.ts";
+import pkg from "../package.json";
+
+const VERSION = pkg.version;
+const INSTALL_PATH = import.meta.dir;
 
 export function App() {
   const { exit } = useApp();
@@ -15,8 +22,10 @@ export function App() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [repoName, setRepoName] = useState("...");
   const [isGitRepo, setIsGitRepo] = useState(true);
+  const [createdWorktreePath, setCreatedWorktreePath] = useState<string | null>(null);
+  const [postCreateCommand, setPostCreateCommand] = useState<string>("");
 
-  const { worktrees, branches, loading, error, refresh, create, remove } =
+  const { worktrees, branches, loading, error, refresh, create, remove, clearError } =
     useWorktrees();
 
   useEffect(() => {
@@ -27,10 +36,16 @@ export function App() {
         const name = await getRepoName();
         setRepoName(name);
         await ensureConfigDir();
+        const config = await loadConfig();
+        setPostCreateCommand(config.postCreateCommand);
       }
     };
     init();
   }, []);
+
+  useEffect(() => {
+    clearError();
+  }, [view, clearError]);
 
   useInput(
     (input, key) => {
@@ -56,6 +71,11 @@ export function App() {
         return;
       }
 
+      if (input === "s") {
+        setView("settings");
+        return;
+      }
+
       if (key.upArrow) {
         setSelectedIndex((i) => (i > 0 ? i - 1 : worktrees.length - 1));
       }
@@ -71,22 +91,66 @@ export function App() {
     path: string;
     branch?: string;
     newBranch?: string;
-    commit?: string;
   }) => {
     try {
-      await create(options);
-      setView("list");
+      const worktreePath = await create(options);
+      const config = await loadConfig();
+      setPostCreateCommand(config.postCreateCommand);
+
+      if (config.postCreateCommand) {
+        setCreatedWorktreePath(worktreePath);
+        setView("postCreate");
+      } else {
+        setView("list");
+      }
     } catch {
       // Error is handled by the hook
     }
   };
 
-  const handleDelete = async (force: boolean) => {
+  const handlePostCreateSwitch = () => {
+    if (createdWorktreePath && postCreateCommand) {
+      const command = expandCommand(postCreateCommand, createdWorktreePath);
+      const child = spawn(command, {
+        shell: true,
+        stdio: "ignore",
+        detached: true,
+        cwd: createdWorktreePath,
+      });
+      child.unref();
+    }
+    setCreatedWorktreePath(null);
+    setView("list");
+  };
+
+  const handlePostCreateStay = () => {
+    setCreatedWorktreePath(null);
+    setView("list");
+  };
+
+  const handleSettingsClose = async () => {
+    const config = await loadConfig();
+    setPostCreateCommand(config.postCreateCommand);
+    setView("list");
+  };
+
+  const handleDelete = async (options: { force: boolean; deleteBranch: boolean }) => {
     const wt = worktrees[selectedIndex];
     if (!wt) return;
     try {
-      await remove(wt.path, force);
+      await remove(wt.path, options.force);
       setSelectedIndex((i) => Math.max(0, i - 1));
+
+      // Delete branch if requested
+      if (options.deleteBranch && wt.branch) {
+        try {
+          await removeBranch(wt.branch);
+          await refresh();
+        } catch {
+          // Ignore errors - branch might already be deleted
+        }
+      }
+
       setView("list");
     } catch {
       // Error is handled by the hook
@@ -106,7 +170,7 @@ export function App() {
 
   return (
     <Box flexDirection="column">
-      <Header repoName={repoName} />
+      <Header repoName={repoName} version={VERSION} installPath={INSTALL_PATH} />
 
       {view === "list" && (
         <WorktreeList
@@ -129,6 +193,17 @@ export function App() {
           worktree={worktrees[selectedIndex]}
           onConfirm={handleDelete}
           onCancel={() => setView("list")}
+        />
+      )}
+
+      {view === "settings" && <Settings onClose={handleSettingsClose} />}
+
+      {view === "postCreate" && createdWorktreePath && (
+        <PostCreatePrompt
+          worktreePath={createdWorktreePath}
+          command={expandCommand(postCreateCommand, createdWorktreePath)}
+          onSwitch={handlePostCreateSwitch}
+          onStay={handlePostCreateStay}
         />
       )}
 

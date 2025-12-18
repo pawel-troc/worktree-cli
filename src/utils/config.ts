@@ -7,10 +7,12 @@ const CONFIG_FILE = join(CONFIG_DIR, "config.json");
 
 export interface Config {
   defaultWorktreePath: string;
+  postCreateCommand: string;
 }
 
 const DEFAULT_CONFIG: Config = {
   defaultWorktreePath: "~/.worktree-cli/worktrees/{repo}/{branch}",
+  postCreateCommand: "open -a Terminal {path}",
 };
 
 export async function ensureConfigDir(): Promise<void> {
@@ -55,4 +57,8 @@ export async function expandWorktreePath(
 export async function getWorktreePath(branch: string): Promise<string> {
   const config = await loadConfig();
   return expandWorktreePath(config.defaultWorktreePath, branch);
+}
+
+export function expandCommand(command: string, worktreePath: string): string {
+  return command.replace("{path}", worktreePath);
 }

@@ -15,8 +15,9 @@ interface UseWorktreesResult {
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
-  create: (options: CreateWorktreeOptions) => Promise<void>;
+  create: (options: CreateWorktreeOptions) => Promise<string>;
   remove: (path: string, force?: boolean) => Promise<void>;
+  clearError: () => void;
 }
 
 export function useWorktrees(): UseWorktreesResult {
@@ -40,12 +41,13 @@ export function useWorktrees(): UseWorktreesResult {
   }, []);
 
   const create = useCallback(
-    async (options: CreateWorktreeOptions) => {
+    async (options: CreateWorktreeOptions): Promise<string> => {
       setLoading(true);
       setError(null);
       try {
-        await createWorktree(options);
+        const path = await createWorktree(options);
         await refresh();
+        return path;
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to create worktree");
         throw e;
@@ -77,5 +79,9 @@ export function useWorktrees(): UseWorktreesResult {
     refresh();
   }, [refresh]);
 
-  return { worktrees, branches, loading, error, refresh, create, remove };
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  return { worktrees, branches, loading, error, refresh, create, remove, clearError };
 }
