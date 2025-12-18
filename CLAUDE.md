@@ -20,7 +20,22 @@ bun link
 
 # Type check
 bun x tsc --noEmit
+
+# Version bumping
+bun run version:patch  # 0.1.0 → 0.1.1
+bun run version:minor  # 0.1.0 → 0.2.0
+bun run version:major  # 0.1.0 → 1.0.0
 ```
+
+## Versioning Guidelines
+
+When modifying code or creating commits, update the version in `package.json`:
+
+- **patch**: Bug fixes, minor tweaks, documentation updates
+- **minor**: New features, non-breaking changes
+- **major**: Breaking changes, major refactors
+
+If unsure which version bump is appropriate, ask the user before running the version command.
 
 ## Architecture
 

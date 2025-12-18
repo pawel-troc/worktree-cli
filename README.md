@@ -32,6 +32,11 @@ bun link
 
 # Or run directly
 bun run start
+
+# Version bumping
+bun run version:patch  # 0.1.0 → 0.1.1
+bun run version:minor  # 0.1.0 → 0.2.0
+bun run version:major  # 0.1.0 → 1.0.0
 ```
 
 ## Usage
