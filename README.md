@@ -5,9 +5,12 @@ Interactive TUI for managing git worktrees.
 ## Features
 
 - List all worktrees with branch and path info
-- Create worktrees from existing branches, new branches, or commits
-- Delete worktrees with confirmation
+- Create worktrees from existing branches or new branches
+- Delete worktrees with optional branch cleanup
+- Wizard-based guided workflows for create/delete operations
+- Post-create actions (open terminal, editor, etc.)
 - Configurable default worktree storage location
+- Arrow key navigation
 
 ## Installation
 
@@ -38,19 +41,19 @@ wt
 - `↑/↓` - Navigate worktrees
 - `c` - Create new worktree
 - `d` - Delete selected worktree
+- `s` - Open settings
 - `r` - Refresh list
 - `q` - Quit
 
-**Create View:**
+**Create Wizard:**
 - `↑/↓` - Navigate options
 - `Enter` - Confirm selection
-- `Tab` - Toggle custom path
-- `Esc` - Cancel
+- `Esc` - Cancel/Go back
 
-**Delete View:**
-- `y` - Confirm delete
-- `n` - Cancel
-- `f` - Force delete (for locked worktrees)
+**Delete Wizard:**
+- `↑/↓` - Navigate options
+- `Enter` - Confirm selection
+- `Esc` - Cancel
 
 ## Configuration
 
@@ -58,31 +61,49 @@ Config file: `~/.worktree-cli/config.json`
 
 ```json
 {
-  "defaultWorktreePath": "~/.worktree-cli/worktrees/{repo}/{branch}"
+  "defaultWorktreePath": "~/.worktree-cli/worktrees/{repo}/{branch}",
+  "postCreateCommand": "open -a Terminal {path}"
 }
 ```
 
-Placeholders:
-- `{repo}` - Repository name
-- `{branch}` - Branch name (slashes replaced with dashes)
+### Options
+
+- `defaultWorktreePath` - Template for worktree location
+  - `{repo}` - Repository name
+  - `{branch}` - Branch name (slashes replaced with dashes)
+- `postCreateCommand` - Command to run after creating a worktree
+  - `{path}` - Path to the created worktree
 
 ## Project Structure
 
 ```
 src/
-├── index.tsx           # Entry point
-├── App.tsx             # Main TUI component
+├── index.tsx              # Entry point
+├── App.tsx                # Main TUI component
 ├── components/
-│   ├── WorktreeList.tsx
-│   ├── CreateWorktree.tsx
-│   ├── DeleteWorktree.tsx
+│   ├── WorktreeList.tsx   # Worktree list display
+│   ├── CreateWorktree.tsx # Create worktree wizard
+│   ├── DeleteWorktree.tsx # Delete worktree wizard
+│   ├── DeleteBranchPrompt.tsx
+│   ├── PostCreatePrompt.tsx
+│   ├── Settings.tsx       # Settings editor
 │   ├── Header.tsx
-│   └── StatusBar.tsx
+│   ├── StatusBar.tsx
+│   └── wizard/            # Reusable wizard components
+│       ├── Wizard.tsx
+│       ├── SelectionStep.tsx
+│       ├── TextInputStep.tsx
+│       ├── ConfirmationStep.tsx
+│       ├── WizardSummary.tsx
+│       └── index.ts
 ├── hooks/
-│   └── useWorktrees.ts
+│   ├── useWorktrees.ts    # Worktree state management
+│   └── useWizard.ts       # Wizard flow management
+├── types/
+│   └── wizard.ts          # Wizard type definitions
 └── utils/
-    ├── git.ts          # Git command wrappers
-    └── config.ts       # Config management
+    ├── git.ts             # Git command wrappers
+    └── config.ts          # Config management
 ```
 
 ## Tech Stack

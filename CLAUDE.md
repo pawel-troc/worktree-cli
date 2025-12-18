@@ -4,8 +4,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-worktree-cli is a CLI tool for managing git worktrees.
+worktree-cli is an interactive TUI tool for managing git worktrees, built with Bun and Ink (React for CLI).
 
-## Project Status
+## Commands
 
-This is a new project. No source code, build system, or tests have been set up yet.
+```bash
+# Install dependencies
+bun install
+
+# Run the app
+bun run start
+
+# Build and link globally (installs as `wt` command)
+bun link
+
+# Type check
+bun x tsc --noEmit
+```
+
+## Architecture
+
+The app uses a view-based architecture with React/Ink:
+
+- **App.tsx** - Main component managing view state (list, create, delete, settings, postCreate)
+- **components/** - UI components for each view
+- **components/wizard/** - Reusable wizard system for multi-step flows
+- **hooks/** - Custom hooks for state management (useWorktrees, useWizard)
+- **utils/** - Git operations and config management
+
+## Key Patterns
+
+- Arrow key navigation throughout the app
+- Wizard-based flows for create/delete operations using useWizard hook
+- Configuration stored in `~/.worktree-cli/config.json`
+- Post-create command execution via spawned detached process
