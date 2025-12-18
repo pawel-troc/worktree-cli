@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Box, Text, useApp, useInput } from "ink";
-import { spawn } from "child_process";
 import { Header } from "./components/Header.tsx";
 import { StatusBar, type View } from "./components/StatusBar.tsx";
 import { WorktreeList } from "./components/WorktreeList.tsx";
@@ -22,6 +21,7 @@ import {
   expandCommand,
   isFirstRun,
 } from "./utils/config.ts";
+import { executePostCreateCommand } from "./utils/terminal.ts";
 import pkg from "../package.json";
 
 const VERSION = pkg.version;
@@ -139,13 +139,7 @@ export function App() {
   const handlePostCreateSwitch = () => {
     if (createdWorktreePath && postCreateCommand) {
       const command = expandCommand(postCreateCommand, createdWorktreePath);
-      const child = spawn(command, {
-        shell: true,
-        stdio: "ignore",
-        detached: true,
-        cwd: createdWorktreePath,
-      });
-      child.unref();
+      executePostCreateCommand(command, createdWorktreePath);
     }
     setCreatedWorktreePath(null);
     setView("list");
@@ -158,13 +152,7 @@ export function App() {
 
   const handleOpenWorktree = (worktreePath: string) => {
     const command = expandCommand(postCreateCommand, worktreePath);
-    const child = spawn(command, {
-      shell: true,
-      stdio: "ignore",
-      detached: true,
-      cwd: worktreePath,
-    });
-    child.unref();
+    executePostCreateCommand(command, worktreePath);
   };
 
   const handleSettingsClose = async () => {

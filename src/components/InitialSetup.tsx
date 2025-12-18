@@ -6,6 +6,7 @@ import {
   getDefaultConfig,
   type Config,
 } from "../utils/config.ts";
+import { PresetPicker } from "./PresetPicker.tsx";
 
 interface InitialSetupProps {
   onComplete: () => void;
@@ -61,49 +62,66 @@ export function InitialSetup({ onComplete }: InitialSetupProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
+  const [showPresetPicker, setShowPresetPicker] = useState(false);
 
   // Total items = fields + Save button
   const totalItems = FIELDS.length + 1;
   const isSaveSelected = selectedIndex === FIELDS.length;
 
-  useInput((input, key) => {
-    if (editing) {
-      if (key.return) {
-        const field = FIELDS[selectedIndex];
-        if (field) {
-          setConfig(setFieldValue(config, field, editValue));
+  useInput(
+    (input, key) => {
+      if (editing) {
+        if (key.return) {
+          const field = FIELDS[selectedIndex];
+          if (field) {
+            setConfig(setFieldValue(config, field, editValue));
+          }
+          setEditing(false);
+          setEditValue("");
+        } else if (key.escape) {
+          setEditing(false);
+          setEditValue("");
+        } else if (key.backspace || key.delete) {
+          setEditValue((s) => s.slice(0, -1));
+        } else if (input && !key.ctrl && !key.meta) {
+          setEditValue((s) => s + input);
         }
-        setEditing(false);
-        setEditValue("");
-      } else if (key.escape) {
-        setEditing(false);
-        setEditValue("");
-      } else if (key.backspace || key.delete) {
-        setEditValue((s) => s.slice(0, -1));
-      } else if (input && !key.ctrl && !key.meta) {
-        setEditValue((s) => s + input);
+        return;
       }
-      return;
-    }
 
-    if (key.upArrow) {
-      setSelectedIndex((i) => (i > 0 ? i - 1 : totalItems - 1));
-    } else if (key.downArrow) {
-      setSelectedIndex((i) => (i < totalItems - 1 ? i + 1 : 0));
-    } else if (key.return) {
-      if (isSaveSelected) {
-        saveConfig(config).then(() => {
-          onComplete();
-        });
-      } else {
-        const field = FIELDS[selectedIndex];
-        if (field) {
-          setEditValue(getFieldValue(config, field));
-          setEditing(true);
+      if (key.upArrow) {
+        setSelectedIndex((i) => (i > 0 ? i - 1 : totalItems - 1));
+      } else if (key.downArrow) {
+        setSelectedIndex((i) => (i < totalItems - 1 ? i + 1 : 0));
+      } else if (key.return) {
+        if (isSaveSelected) {
+          saveConfig(config).then(() => {
+            onComplete();
+          });
+        } else {
+          const field = FIELDS[selectedIndex];
+          if (field) {
+            if (field === "postCreateCommand") {
+              setShowPresetPicker(true);
+            } else {
+              setEditValue(getFieldValue(config, field));
+              setEditing(true);
+            }
+          }
         }
       }
-    }
-  });
+    },
+    { isActive: !showPresetPicker }
+  );
+
+  const handlePresetSelect = (value: string) => {
+    setConfig((c) => ({ ...c, postCreateCommand: value }));
+    setShowPresetPicker(false);
+  };
+
+  const handlePresetCancel = () => {
+    setShowPresetPicker(false);
+  };
 
   return (
     <Box flexDirection="column">
@@ -126,6 +144,7 @@ export function InitialSetup({ onComplete }: InitialSetupProps) {
         const info = SETTINGS_INFO[field];
         const isSelected = i === selectedIndex;
         const isEditing = isSelected && editing;
+        const isPresetPickerOpen = isSelected && showPresetPicker && field === "postCreateCommand";
 
         return (
           <Box key={field} flexDirection="column" marginBottom={1}>
@@ -136,7 +155,13 @@ export function InitialSetup({ onComplete }: InitialSetupProps) {
               </Text>
             </Box>
             <Box marginLeft={4}>
-              {isEditing ? (
+              {isPresetPickerOpen ? (
+                <PresetPicker
+                  value={config.postCreateCommand}
+                  onChange={handlePresetSelect}
+                  onCancel={handlePresetCancel}
+                />
+              ) : isEditing ? (
                 <Box>
                   <Text color="yellow">{editValue}</Text>
                   <Text color="gray">|</Text>
@@ -147,7 +172,7 @@ export function InitialSetup({ onComplete }: InitialSetupProps) {
                 </Text>
               )}
             </Box>
-            {isSelected && !editing && (
+            {isSelected && !editing && !isPresetPickerOpen && (
               <Box marginLeft={4}>
                 <Text dimColor italic>
                   {info.hint}
@@ -165,13 +190,15 @@ export function InitialSetup({ onComplete }: InitialSetupProps) {
         </Text>
       </Box>
 
-      <Box marginTop={1}>
-        <Text dimColor>
-          {editing
-            ? "[Enter] Save • [Esc] Cancel"
-            : "[Enter] Edit/Select • [↑↓] Navigate"}
-        </Text>
-      </Box>
+      {!showPresetPicker && (
+        <Box marginTop={1}>
+          <Text dimColor>
+            {editing
+              ? "[Enter] Save • [Esc] Cancel"
+              : "[Enter] Edit/Select • [↑↓] Navigate"}
+          </Text>
+        </Box>
+      )}
     </Box>
   );
 }
