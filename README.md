@@ -43,6 +43,7 @@ wt
 - `↑/↓` - Navigate worktrees
 - `c` - Create new worktree
 - `d` - Delete selected worktree
+- `o` - Open selected worktree (runs post-create command)
 - `s` - Open settings
 - `r` - Refresh list
 - `q` - Quit

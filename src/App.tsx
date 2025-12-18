@@ -94,6 +94,11 @@ export function App() {
         return;
       }
 
+      if (input === "o" && worktrees.length > 0 && worktrees[selectedIndex] && postCreateCommand) {
+        handleOpenWorktree(worktrees[selectedIndex].path);
+        return;
+      }
+
       if (key.upArrow) {
         setSelectedIndex((i) => (i > 0 ? i - 1 : worktrees.length - 1));
       }
@@ -149,6 +154,17 @@ export function App() {
   const handlePostCreateStay = () => {
     setCreatedWorktreePath(null);
     setView("list");
+  };
+
+  const handleOpenWorktree = (worktreePath: string) => {
+    const command = expandCommand(postCreateCommand, worktreePath);
+    const child = spawn(command, {
+      shell: true,
+      stdio: "ignore",
+      detached: true,
+      cwd: worktreePath,
+    });
+    child.unref();
   };
 
   const handleSettingsClose = async () => {
