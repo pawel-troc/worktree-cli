@@ -1,0 +1,7 @@
+# This file defines code owners for the worktree-cli repository
+
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# All files in the repository
+
+- @pawel-troc

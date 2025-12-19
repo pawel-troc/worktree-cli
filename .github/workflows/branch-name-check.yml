@@ -1,0 +1,31 @@
+name: Branch name check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine branch name
+        id: vars
+        run: |
+          # For pull_request events, GITHUB_HEAD_REF is the source branch
+          if [ -n "${GITHUB_HEAD_REF}" ]; then
+            BRANCH="${GITHUB_HEAD_REF}"
+          else
+            # For push events, GITHUB_REF is refs/heads/<branch>
+            BRANCH="${GITHUB_REF#refs/heads/}"
+          fi
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+      - name: Validate branch name
+        run: |
+          echo "Checking branch: ${{ steps.vars.outputs.branch }}"
+          if [[ "${{ steps.vars.outputs.branch }}" =~ ^(feature|bugfix)/.+$ ]]; then
+            echo "Branch name OK"
+          else
+            echo "Branch name '${{ steps.vars.outputs.branch }}' does not match required pattern: 'feature/*' or 'bugfix/*'"
+            exit 1
+          fi
