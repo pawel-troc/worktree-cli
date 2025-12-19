@@ -21,16 +21,33 @@ export function DeleteWorktree({
 }: DeleteWorktreeProps) {
   const branchDisplay = worktree.branch || worktree.head.substring(0, 7);
 
+  // Determine if force deletion is required
+  const requiresForce = worktree.isLocked || worktree.hasChanges;
+
+  // Build the force label based on why force is needed
+  const forceLabel = useMemo(() => {
+    const reasons: string[] = [];
+    if (worktree.isLocked) reasons.push("locked");
+    if (worktree.hasChanges) reasons.push("uncommitted changes");
+    return `Yes, force delete (${reasons.join(", ")})`;
+  }, [worktree.isLocked, worktree.hasChanges]);
+
   const steps: WizardStep<DeleteWorktreeData>[] = useMemo(() => {
-    const worktreeOptions = worktree.isLocked
+    const worktreeOptions = requiresForce
       ? [
-          { value: "force", label: "Yes, force delete (locked)" },
+          { value: "force", label: forceLabel },
           { value: "no", label: "No, keep it" },
         ]
       : [
           { value: "yes", label: "Yes, delete it" },
           { value: "no", label: "No, keep it" },
         ];
+
+    // Build prompt with warning if there are uncommitted changes
+    let prompt = `Delete worktree "${branchDisplay}"?`;
+    if (worktree.hasChanges) {
+      prompt += "\n\n⚠️  Warning: This worktree has uncommitted changes that will be lost!";
+    }
 
     return [
       // Step 1: Delete worktree confirmation
@@ -39,7 +56,7 @@ export function DeleteWorktree({
         type: "selection",
         label: "Delete worktree",
         dataKey: "deleteWorktree",
-        prompt: `Delete worktree "${branchDisplay}"?`,
+        prompt,
         options: worktreeOptions,
         formatValue: (v) => {
           if (v === "yes") return "Yes";
@@ -64,7 +81,7 @@ export function DeleteWorktree({
         formatValue: (v) => (v === "yes" ? "Yes" : "No"),
       },
     ];
-  }, [worktree, branchDisplay]);
+  }, [worktree, branchDisplay, requiresForce, forceLabel]);
 
   const handleComplete = (data: DeleteWorktreeData) => {
     if (data.deleteWorktree === "no") {
@@ -84,7 +101,7 @@ export function DeleteWorktree({
       titleColor="red"
       steps={steps}
       initialData={{
-        deleteWorktree: worktree.isLocked ? "force" : "yes",
+        deleteWorktree: requiresForce ? "force" : "yes",
         deleteBranch: "no",
       }}
       onComplete={handleComplete}

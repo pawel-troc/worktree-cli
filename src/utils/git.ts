@@ -8,6 +8,7 @@ export interface Worktree {
   isDetached: boolean;
   isLocked: boolean;
   lockReason?: string;
+  hasChanges: boolean;
 }
 
 export interface Branch {
@@ -21,6 +22,17 @@ export async function isGitRepository(): Promise<boolean> {
     await $`git rev-parse --is-inside-work-tree`.quiet();
     return true;
   } catch {
+    return false;
+  }
+}
+
+export async function hasUncommittedChanges(worktreePath: string): Promise<boolean> {
+  try {
+    // Check for modified, deleted, or untracked files in the worktree
+    const result = await $`git -C ${worktreePath} status --porcelain`.text();
+    return result.trim().length > 0;
+  } catch {
+    // If we can't check, assume no changes to avoid false positives
     return false;
   }
 }
@@ -46,6 +58,7 @@ export async function getWorktrees(): Promise<Worktree[]> {
         isBare: false,
         isDetached: false,
         isLocked: false,
+        hasChanges: false,
       };
     } else if (line.startsWith("HEAD ")) {
       current.head = line.substring(5);
@@ -66,6 +79,15 @@ export async function getWorktrees(): Promise<Worktree[]> {
   if (current.path) {
     worktrees.push(current as Worktree);
   }
+
+  // Check for uncommitted changes in each worktree (in parallel)
+  await Promise.all(
+    worktrees.map(async (wt) => {
+      if (!wt.isBare) {
+        wt.hasChanges = await hasUncommittedChanges(wt.path);
+      }
+    })
+  );
 
   return worktrees;
 }
