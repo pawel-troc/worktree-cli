@@ -2,7 +2,11 @@ name: Branch name check
 
 on:
   push:
+    branches-ignore:
+      - main
   pull_request:
+    branches-ignore:
+      - main
 
 jobs:
   check:
@@ -23,9 +27,9 @@ jobs:
       - name: Validate branch name
         run: |
           echo "Checking branch: ${{ steps.vars.outputs.branch }}"
-          if [[ "${{ steps.vars.outputs.branch }}" =~ ^(feature|bugfix)/.+$ ]]; then
+          if [[ "${{ steps.vars.outputs.branch }}" =~ ^(feature|bugfix|chore)/.+$ ]]; then
             echo "Branch name OK"
           else
-            echo "Branch name '${{ steps.vars.outputs.branch }}' does not match required pattern: 'feature/*' or 'bugfix/*'"
+            echo "Branch name '${{ steps.vars.outputs.branch }}' does not match required pattern: 'feature/*', 'bugfix/*', or 'chore/*'"
             exit 1
           fi
