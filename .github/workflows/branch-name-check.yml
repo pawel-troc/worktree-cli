@@ -1,4 +1,4 @@
-name: Branch name check
+name: Branch name check (some change)
 
 on:
   push:
