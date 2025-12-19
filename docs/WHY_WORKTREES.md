@@ -114,19 +114,19 @@ With worktrees, you can easily:
 
 ```mermaid
 graph TD
-    subgraph "What Gets SHARED"
+    subgraph "Shared"
         G[.git directory]
         H[Git history]
         R[Remote configuration]
         B[All branches]
     end
     
-    subgraph "What Gets CREATED in New Worktree"
+    subgraph "Created"
         T[Tracked files only]
         TN[Checked out to selected branch]
     end
     
-    subgraph "What Does NOT Get Copied ⚠️"
+    subgraph "NOT Copied ⚠️"
         U[Untracked files]
         I[.gitignore'd files]
         N[node_modules]
@@ -219,13 +219,6 @@ git worktree add ../my-worktree-folder existing-branch
 git worktree add -b new-feature ../my-worktree-folder main
 ```
 
-### Using This CLI Tool
-
-Just run `wt` and use the interactive interface to:
-- **Create** worktrees with automatic path management
-- **Delete** worktrees and optionally clean up branches
-- **Configure** automatic file copying (for `.env` files, etc.)
-
 ### Listing Worktrees
 
 ```bash
@@ -237,6 +230,13 @@ git worktree list
 ```bash
 git worktree remove ../my-worktree-folder
 ```
+
+### Using This CLI Tool
+
+Just run `wt` and use the interactive interface to:
+- **Create** worktrees with automatic path management
+- **Delete** worktrees and optionally clean up branches
+- **Configure** automatic file copying (for `.env` files, etc.)
 
 ## Summary
 
