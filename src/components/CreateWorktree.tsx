@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import type { Branch } from "../utils/git.ts";
-import { getWorktreePath } from "../utils/config.ts";
+import { getWorktreePath, loadConfig, type Config } from "../utils/config.ts";
 import { Wizard } from "./wizard/Wizard.tsx";
 import type { WizardStep } from "../types/wizard.ts";
 
 interface CreateWorktreeData extends Record<string, unknown> {
   mode: "existing" | "new";
   branch: string;
-  branchType: "feature" | "bugfix";
+  branchType: string;
   newBranchName: string;
   pathChoice: "default" | "custom";
   customPath: string;
@@ -32,11 +32,17 @@ export function CreateWorktree({
 }: CreateWorktreeProps) {
   const [suggestedPath, setSuggestedPath] = useState("");
   const [currentBranch, setCurrentBranch] = useState("");
+  const [config, setConfig] = useState<Config | null>(null);
 
   const localBranches = useMemo(
     () => branches.filter((b) => !b.isRemote),
     [branches]
   );
+
+  // Load config
+  useEffect(() => {
+    loadConfig(repoRoot).then(setConfig);
+  }, [repoRoot]);
 
   // Compute suggested path when branch changes
   useEffect(() => {
@@ -55,6 +61,9 @@ export function CreateWorktree({
       setCurrentBranch(localBranches[0]?.name || "");
     }
   }, [localBranches, currentBranch]);
+
+  const enforceBranchConvention = config?.enforceBranchConvention ?? false;
+  const branchPrefixes = config?.branchPrefixes ?? ["feature", "bugfix"];
 
   const steps: WizardStep<CreateWorktreeData>[] = useMemo(
     () => [
@@ -88,18 +97,18 @@ export function CreateWorktree({
         })),
       },
 
-      // Step 2b: Branch type selection (for new mode)
+      // Step 2b: Branch type selection (for new mode, only if convention is enforced)
       {
         id: "branchType",
         type: "selection",
         label: "Branch type",
         dataKey: "branchType",
         prompt: "Select branch type:",
-        skipIf: (data) => data.mode === "existing",
-        options: [
-          { value: "feature", label: "feature/" },
-          { value: "bugfix", label: "bugfix/" },
-        ],
+        skipIf: (data) => data.mode === "existing" || !enforceBranchConvention,
+        options: branchPrefixes.map((prefix) => ({
+          value: prefix,
+          label: `${prefix}/`,
+        })),
         formatValue: (v) => `${v}/`,
       },
 
@@ -109,8 +118,8 @@ export function CreateWorktree({
         type: "text",
         label: "New branch",
         dataKey: "newBranchName",
-        prompt: "Enter branch name:",
-        placeholder: "my-branch-name",
+        prompt: enforceBranchConvention ? "Enter branch name:" : "Enter full branch name:",
+        placeholder: enforceBranchConvention ? "my-branch-name" : "feature/my-branch-name",
         skipIf: (data) => data.mode === "existing",
         validate: (value) => {
           if (!value || (value as string).trim() === "") {
@@ -119,8 +128,11 @@ export function CreateWorktree({
           return null;
         },
         formatValue: (value, data) => {
-          const branchType = data?.branchType || "feature";
-          return `${branchType}/${value}`;
+          if (enforceBranchConvention) {
+            const branchType = data?.branchType || branchPrefixes[0] || "feature";
+            return `${branchType}/${value}`;
+          }
+          return value as string;
         },
       },
 
@@ -157,14 +169,18 @@ export function CreateWorktree({
         },
       },
     ],
-    [localBranches, suggestedPath]
+    [localBranches, suggestedPath, enforceBranchConvention, branchPrefixes]
   );
 
   const handleComplete = async (data: CreateWorktreeData) => {
     // Compute final path
     let finalPath: string;
-    const fullBranchName = `${data.branchType}/${data.newBranchName}`;
-    
+
+    // Build full branch name based on convention setting
+    const fullBranchName = enforceBranchConvention
+      ? `${data.branchType}/${data.newBranchName}`
+      : data.newBranchName;
+
     if (data.pathChoice === "custom") {
       finalPath = data.customPath;
     } else {
@@ -184,14 +200,27 @@ export function CreateWorktree({
   // Update currentBranch when wizard data might change
   // This is handled via the step options being dynamic
   const handleDataChange = (data: Partial<CreateWorktreeData>) => {
-    const branchName =
-      data.mode === "existing"
-        ? data.branch || localBranches[0]?.name || ""
-        : `${data.branchType || "feature"}/${data.newBranchName || "new-branch"}`;
+    let branchName: string;
+    if (data.mode === "existing") {
+      branchName = data.branch || localBranches[0]?.name || "";
+    } else if (enforceBranchConvention) {
+      branchName = `${data.branchType || branchPrefixes[0] || "feature"}/${data.newBranchName || "new-branch"}`;
+    } else {
+      branchName = data.newBranchName || "new-branch";
+    }
     if (branchName !== currentBranch) {
       setCurrentBranch(branchName);
     }
   };
+
+  // Wait for config to load
+  if (!config) {
+    return (
+      <Box>
+        <Text>Loading...</Text>
+      </Box>
+    );
+  }
 
   return (
     <WizardWithDataTracking<CreateWorktreeData>
@@ -203,7 +232,7 @@ export function CreateWorktree({
       initialData={{
         mode: "existing",
         branch: localBranches[0]?.name || "",
-        branchType: "feature",
+        branchType: branchPrefixes[0] || "feature",
         newBranchName: "",
         pathChoice: "default",
         customPath: "",

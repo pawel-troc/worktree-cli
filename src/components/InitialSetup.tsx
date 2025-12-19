@@ -14,7 +14,7 @@ interface InitialSetupProps {
   onComplete: () => void;
 }
 
-type SettingField = "defaultWorktreePath" | "postCreateCommand" | "filesToCopy";
+type SettingField = "defaultWorktreePath" | "postCreateCommand" | "filesToCopy" | "enforceBranchConvention" | "branchPrefixes";
 
 const SETTINGS_INFO: Record<SettingField, { label: string; hint: string }> = {
   defaultWorktreePath: {
@@ -29,19 +29,41 @@ const SETTINGS_INFO: Record<SettingField, { label: string; hint: string }> = {
     label: "Files to copy",
     hint: "Glob patterns for files to copy to new worktrees (comma-separated)",
   },
+  enforceBranchConvention: {
+    label: "Enforce branch naming convention",
+    hint: "Require branch prefixes when creating new branches",
+  },
+  branchPrefixes: {
+    label: "Branch prefixes",
+    hint: "Comma-separated list of allowed prefixes (e.g., feature, bugfix, hotfix)",
+  },
 };
 
-const FIELDS: SettingField[] = [
+const BASE_FIELDS: SettingField[] = [
   "defaultWorktreePath",
   "postCreateCommand",
   "filesToCopy",
+  "enforceBranchConvention",
 ];
 
 function getFieldValue(config: Config, field: SettingField): string {
   if (field === "filesToCopy") {
     return config.filesToCopy.join(", ");
   }
+  if (field === "branchPrefixes") {
+    return config.branchPrefixes.join(", ");
+  }
+  if (field === "enforceBranchConvention") {
+    return config.enforceBranchConvention ? "Yes" : "No";
+  }
   return config[field];
+}
+
+function getActiveFields(config: Config): SettingField[] {
+  if (config.enforceBranchConvention) {
+    return [...BASE_FIELDS, "branchPrefixes"];
+  }
+  return BASE_FIELDS;
 }
 
 function setFieldValue(
@@ -56,6 +78,16 @@ function setFieldValue(
       .filter((s) => s.length > 0);
     return { ...config, filesToCopy: patterns };
   }
+  if (field === "branchPrefixes") {
+    const prefixes = value
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    return { ...config, branchPrefixes: prefixes };
+  }
+  if (field === "enforceBranchConvention") {
+    return { ...config, enforceBranchConvention: !config.enforceBranchConvention };
+  }
   return { ...config, [field]: value };
 }
 
@@ -66,15 +98,23 @@ export function InitialSetup({ repoRoot, onComplete }: InitialSetupProps) {
   const [editValue, setEditValue] = useState("");
   const [showPresetPicker, setShowPresetPicker] = useState(false);
 
+  const activeFields = getActiveFields(config);
   // Total items = fields + Save button
-  const totalItems = FIELDS.length + 1;
-  const isSaveSelected = selectedIndex === FIELDS.length;
+  const totalItems = activeFields.length + 1;
+  const isSaveSelected = selectedIndex === activeFields.length;
+
+  // Clamp selectedIndex when activeFields changes
+  useEffect(() => {
+    if (selectedIndex >= totalItems) {
+      setSelectedIndex(totalItems - 1);
+    }
+  }, [totalItems, selectedIndex]);
 
   useInput(
     (input, key) => {
       if (editing) {
         if (key.return) {
-          const field = FIELDS[selectedIndex];
+          const field = activeFields[selectedIndex];
           if (field) {
             setConfig(setFieldValue(config, field, editValue));
           }
@@ -101,10 +141,13 @@ export function InitialSetup({ repoRoot, onComplete }: InitialSetupProps) {
             onComplete();
           });
         } else {
-          const field = FIELDS[selectedIndex];
+          const field = activeFields[selectedIndex];
           if (field) {
             if (field === "postCreateCommand") {
               setShowPresetPicker(true);
+            } else if (field === "enforceBranchConvention") {
+              // Toggle boolean field
+              setConfig(setFieldValue(config, field, ""));
             } else {
               setEditValue(getFieldValue(config, field));
               setEditing(true);
@@ -142,11 +185,12 @@ export function InitialSetup({ repoRoot, onComplete }: InitialSetupProps) {
         </Text>
       </Box>
 
-      {FIELDS.map((field, i) => {
+      {activeFields.map((field, i) => {
         const info = SETTINGS_INFO[field];
         const isSelected = i === selectedIndex;
         const isEditing = isSelected && editing;
         const isPresetPickerOpen = isSelected && showPresetPicker && field === "postCreateCommand";
+        const isToggle = field === "enforceBranchConvention";
 
         return (
           <Box key={field} flexDirection="column" marginBottom={1}>
@@ -168,6 +212,10 @@ export function InitialSetup({ repoRoot, onComplete }: InitialSetupProps) {
                   <Text color="yellow">{editValue}</Text>
                   <Text color="gray">|</Text>
                 </Box>
+              ) : isToggle ? (
+                <Text color={config.enforceBranchConvention ? "green" : "red"}>
+                  {config.enforceBranchConvention ? "Yes" : "No"}
+                </Text>
               ) : (
                 <Text dimColor>
                   {getFieldValue(config, field) || "(empty)"}
@@ -177,7 +225,7 @@ export function InitialSetup({ repoRoot, onComplete }: InitialSetupProps) {
             {isSelected && !editing && !isPresetPickerOpen && (
               <Box marginLeft={4}>
                 <Text dimColor italic>
-                  {info.hint}
+                  {isToggle ? "[Enter] Toggle" : info.hint}
                 </Text>
               </Box>
             )}

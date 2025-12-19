@@ -12,7 +12,7 @@
 
 - List all worktrees with branch and path info
 - Create worktrees from existing branches or new branches
-- Enforced branch naming convention (`feature/` or `bugfix/` prefixes)
+- Optional branch naming convention with configurable prefixes
 - Delete worktrees with optional branch cleanup
 - Wizard-based guided workflows for create/delete operations
 - Post-create actions (open terminal, editor, etc.)
@@ -65,10 +65,9 @@ wt
 - `Enter` - Confirm selection
 - `Esc` - Cancel/Go back
 
-When creating a new branch, the wizard enforces a naming convention:
-1. Select branch type: `feature/` or `bugfix/`
-2. Enter branch name (e.g., `my-feature`)
-3. Final branch name will be `feature/my-feature` or `bugfix/my-feature`
+When creating a new branch:
+- If branch naming convention is **disabled** (default): Enter any branch name directly
+- If branch naming convention is **enabled**: Select a prefix from your configured list, then enter the branch name
 
 **Delete Wizard:**
 - `↑/↓` - Navigate options
@@ -83,7 +82,9 @@ Config file: `~/.worktree-cli/config.json`
 {
   "defaultWorktreePath": "~/.worktree-cli/worktrees/{repo}/{branch}",
   "postCreateCommand": "open -a Terminal {path}",
-  "filesToCopy": [".env*"]
+  "filesToCopy": [".env*"],
+  "enforceBranchConvention": false,
+  "branchPrefixes": ["feature", "bugfix"]
 }
 ```
 
@@ -97,6 +98,10 @@ Config file: `~/.worktree-cli/config.json`
 - `filesToCopy` - Glob patterns for files to copy to new worktrees
   - Useful for files not tracked by git (e.g., `.env`, `.env.local`)
   - Supports glob patterns like `.env*`, `config/*.local.json`
+- `enforceBranchConvention` - Require branch prefixes when creating new branches (default: `false`)
+- `branchPrefixes` - List of allowed branch prefixes when convention is enforced
+  - Default: `["feature", "bugfix"]`
+  - Customize to match your team's conventions (e.g., `["feature", "bugfix", "hotfix", "release"]`)
 
 ## Project Structure
 

@@ -23,12 +23,16 @@ export interface Config {
   defaultWorktreePath: string;
   postCreateCommand: string;
   filesToCopy: string[];
+  enforceBranchConvention: boolean;
+  branchPrefixes: string[];
 }
 
 const DEFAULT_CONFIG: Config = {
   defaultWorktreePath: "~/.worktree-cli/worktrees/{repo}/{branch}",
   postCreateCommand: "open -a Terminal {path}",
   filesToCopy: [".env*"],
+  enforceBranchConvention: false,
+  branchPrefixes: ["feature", "bugfix"],
 };
 
 export async function ensureConfigDir(repoRoot: string): Promise<void> {

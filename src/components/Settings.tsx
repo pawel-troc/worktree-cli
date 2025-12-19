@@ -9,7 +9,7 @@ interface SettingsProps {
   onClose: () => void;
 }
 
-type SettingField = "defaultWorktreePath" | "postCreateCommand" | "filesToCopy";
+type SettingField = "defaultWorktreePath" | "postCreateCommand" | "filesToCopy" | "enforceBranchConvention" | "branchPrefixes";
 
 const SETTINGS_INFO: Record<SettingField, { label: string; hint: string }> = {
   defaultWorktreePath: {
@@ -24,19 +24,41 @@ const SETTINGS_INFO: Record<SettingField, { label: string; hint: string }> = {
     label: "Files to copy",
     hint: "Glob patterns for files to copy to new worktrees (comma-separated)",
   },
+  enforceBranchConvention: {
+    label: "Enforce branch naming convention",
+    hint: "Require branch prefixes when creating new branches",
+  },
+  branchPrefixes: {
+    label: "Branch prefixes",
+    hint: "Comma-separated list of allowed prefixes (e.g., feature, bugfix, hotfix)",
+  },
 };
 
-const FIELDS: SettingField[] = [
+const BASE_FIELDS: SettingField[] = [
   "defaultWorktreePath",
   "postCreateCommand",
   "filesToCopy",
+  "enforceBranchConvention",
 ];
 
 function getFieldValue(config: Config, field: SettingField): string {
   if (field === "filesToCopy") {
     return config.filesToCopy.join(", ");
   }
+  if (field === "branchPrefixes") {
+    return config.branchPrefixes.join(", ");
+  }
+  if (field === "enforceBranchConvention") {
+    return config.enforceBranchConvention ? "Yes" : "No";
+  }
   return config[field];
+}
+
+function getActiveFields(config: Config): SettingField[] {
+  if (config.enforceBranchConvention) {
+    return [...BASE_FIELDS, "branchPrefixes"];
+  }
+  return BASE_FIELDS;
 }
 
 function setFieldValue(
@@ -50,6 +72,16 @@ function setFieldValue(
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
     return { ...config, filesToCopy: patterns };
+  }
+  if (field === "branchPrefixes") {
+    const prefixes = value
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    return { ...config, branchPrefixes: prefixes };
+  }
+  if (field === "enforceBranchConvention") {
+    return { ...config, enforceBranchConvention: !config.enforceBranchConvention };
   }
   return { ...config, [field]: value };
 }
@@ -65,6 +97,15 @@ export function Settings({ repoRoot, onClose }: SettingsProps) {
   useEffect(() => {
     loadConfig(repoRoot).then(setConfig);
   }, [repoRoot]);
+
+  const activeFields = config ? getActiveFields(config) : BASE_FIELDS;
+
+  // Clamp selectedField when activeFields changes
+  useEffect(() => {
+    if (selectedField >= activeFields.length) {
+      setSelectedField(activeFields.length - 1);
+    }
+  }, [activeFields.length, selectedField]);
 
   useInput(
     (input, key) => {
@@ -82,7 +123,7 @@ export function Settings({ repoRoot, onClose }: SettingsProps) {
 
       if (editing) {
         if (key.return) {
-          const field = FIELDS[selectedField];
+          const field = activeFields[selectedField];
           if (field) {
             const newConfig = setFieldValue(config, field, editValue);
             setConfig(newConfig);
@@ -102,14 +143,22 @@ export function Settings({ repoRoot, onClose }: SettingsProps) {
       }
 
       if (key.upArrow) {
-        setSelectedField((i) => (i > 0 ? i - 1 : FIELDS.length - 1));
+        setSelectedField((i) => (i > 0 ? i - 1 : activeFields.length - 1));
       } else if (key.downArrow) {
-        setSelectedField((i) => (i < FIELDS.length - 1 ? i + 1 : 0));
+        setSelectedField((i) => (i < activeFields.length - 1 ? i + 1 : 0));
       } else if (key.return) {
-        const field = FIELDS[selectedField];
+        const field = activeFields[selectedField];
         if (field) {
           if (field === "postCreateCommand") {
             setShowPresetPicker(true);
+          } else if (field === "enforceBranchConvention") {
+            // Toggle boolean field
+            const newConfig = setFieldValue(config, field, "");
+            setConfig(newConfig);
+            saveConfig(newConfig, repoRoot).then(() => {
+              setSaved(true);
+              setTimeout(() => setSaved(false), 2000);
+            });
           } else {
             setEditValue(getFieldValue(config, field));
             setEditing(true);
@@ -149,11 +198,12 @@ export function Settings({ repoRoot, onClose }: SettingsProps) {
         {saved && <Text color="green"> (Saved!)</Text>}
       </Box>
 
-      {FIELDS.map((field, i) => {
+      {activeFields.map((field, i) => {
         const info = SETTINGS_INFO[field];
         const isSelected = i === selectedField;
         const isEditing = isSelected && editing;
         const isPresetPickerOpen = isSelected && showPresetPicker && field === "postCreateCommand";
+        const isToggle = field === "enforceBranchConvention";
 
         return (
           <Box key={field} flexDirection="column" marginBottom={1}>
@@ -175,6 +225,10 @@ export function Settings({ repoRoot, onClose }: SettingsProps) {
                   <Text color="yellow">{editValue}</Text>
                   <Text color="gray">|</Text>
                 </Box>
+              ) : isToggle ? (
+                <Text color={config.enforceBranchConvention ? "green" : "red"}>
+                  {config.enforceBranchConvention ? "Yes" : "No"}
+                </Text>
               ) : (
                 <Text dimColor>
                   {getFieldValue(config, field) || "(empty)"}
@@ -184,7 +238,7 @@ export function Settings({ repoRoot, onClose }: SettingsProps) {
             {isSelected && !isPresetPickerOpen && (
               <Box marginLeft={4}>
                 <Text dimColor italic>
-                  {info.hint}
+                  {isToggle ? "[Enter] Toggle" : info.hint}
                 </Text>
               </Box>
             )}
