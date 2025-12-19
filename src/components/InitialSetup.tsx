@@ -9,6 +9,7 @@ import {
 import { PresetPicker } from "./PresetPicker.tsx";
 
 interface InitialSetupProps {
+  repoRoot: string;
   onComplete: () => void;
 }
 
@@ -57,7 +58,7 @@ function setFieldValue(
   return { ...config, [field]: value };
 }
 
-export function InitialSetup({ onComplete }: InitialSetupProps) {
+export function InitialSetup({ repoRoot, onComplete }: InitialSetupProps) {
   const [config, setConfig] = useState<Config>(getDefaultConfig());
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [editing, setEditing] = useState(false);
@@ -95,7 +96,7 @@ export function InitialSetup({ onComplete }: InitialSetupProps) {
         setSelectedIndex((i) => (i < totalItems - 1 ? i + 1 : 0));
       } else if (key.return) {
         if (isSaveSelected) {
-          saveConfig(config).then(() => {
+          saveConfig(config, repoRoot).then(() => {
             onComplete();
           });
         } else {

@@ -1,9 +1,23 @@
 import { homedir } from "os";
 import { join } from "path";
+import { createHash } from "crypto";
 import { getRepoName } from "./git.ts";
 
 const CONFIG_DIR = join(homedir(), ".worktree-cli");
-const CONFIG_FILE = join(CONFIG_DIR, "config.json");
+
+function getRepoId(repoRoot: string): string {
+  const name = repoRoot.split("/").pop() || "unknown";
+  const hash = createHash("md5").update(repoRoot).digest("hex").slice(0, 8);
+  return `${name}-${hash}`;
+}
+
+function getRepoConfigDir(repoRoot: string): string {
+  return join(CONFIG_DIR, "repos", getRepoId(repoRoot));
+}
+
+function getRepoConfigFile(repoRoot: string): string {
+  return join(getRepoConfigDir(repoRoot), "config.json");
+}
 
 export interface Config {
   defaultWorktreePath: string;
@@ -17,32 +31,36 @@ const DEFAULT_CONFIG: Config = {
   filesToCopy: [".env*"],
 };
 
-export async function ensureConfigDir(): Promise<void> {
+export async function ensureConfigDir(repoRoot: string): Promise<void> {
   const fs = await import("fs/promises");
   await fs.mkdir(CONFIG_DIR, { recursive: true });
   await fs.mkdir(join(CONFIG_DIR, "worktrees"), { recursive: true });
+  await fs.mkdir(getRepoConfigDir(repoRoot), { recursive: true });
 }
 
-export async function loadConfig(): Promise<Config> {
+export async function loadConfig(repoRoot: string): Promise<Config> {
   try {
     const fs = await import("fs/promises");
-    const content = await fs.readFile(CONFIG_FILE, "utf-8");
+    const configFile = getRepoConfigFile(repoRoot);
+    const content = await fs.readFile(configFile, "utf-8");
     return { ...DEFAULT_CONFIG, ...JSON.parse(content) };
   } catch {
     return DEFAULT_CONFIG;
   }
 }
 
-export async function saveConfig(config: Config): Promise<void> {
-  await ensureConfigDir();
+export async function saveConfig(config: Config, repoRoot: string): Promise<void> {
+  await ensureConfigDir(repoRoot);
   const fs = await import("fs/promises");
-  await fs.writeFile(CONFIG_FILE, JSON.stringify(config, null, 2));
+  const configFile = getRepoConfigFile(repoRoot);
+  await fs.writeFile(configFile, JSON.stringify(config, null, 2));
 }
 
-export async function isFirstRun(): Promise<boolean> {
+export async function isFirstRun(repoRoot: string): Promise<boolean> {
   try {
     const fs = await import("fs/promises");
-    await fs.access(CONFIG_FILE);
+    const configFile = getRepoConfigFile(repoRoot);
+    await fs.access(configFile);
     return false;
   } catch {
     return true;
@@ -70,8 +88,8 @@ export async function expandWorktreePath(
   return path;
 }
 
-export async function getWorktreePath(branch: string): Promise<string> {
-  const config = await loadConfig();
+export async function getWorktreePath(branch: string, repoRoot: string): Promise<string> {
+  const config = await loadConfig(repoRoot);
   return expandWorktreePath(config.defaultWorktreePath, branch);
 }
 
