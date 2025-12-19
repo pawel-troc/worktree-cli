@@ -180,6 +180,69 @@ git merge origin/main
 git rebase origin/main
 ```
 
+## Known Limitations
+
+While worktrees are powerful, there are some edge cases to be aware of:
+
+### 1. Hardcoded Paths in Scripts and Aliases
+
+If you have custom-build scripts, deployment aliases, or automation that uses **hardcoded absolute paths** pointing to your original repository location, they will break when executed from a worktree.
+
+```bash
+# ❌ This alias won't work in worktrees
+alias deploy="cd ~/projects/my-app && ./scripts/deploy.sh"
+
+# ✅ Use relative paths or dynamic resolution instead
+alias deploy="cd \$(git rev-parse --show-toplevel) && ./scripts/deploy.sh"
+```
+
+**Common problematic patterns:**
+
+| Pattern | Problem | Solution |
+|---------|---------|----------|
+| `~/projects/my-app/...` | Fixed path to original repo | Use `$(git rev-parse --show-toplevel)` |
+| `$PROJECT_ROOT` env var | Points to original location | Update env var per worktree or use git command |
+| IDE run configurations | May store absolute paths | Use relative paths or `${workspaceFolder}` |
+| Makefile with absolute paths | Hardcoded directories | Use `$(shell pwd)` or `$(CURDIR)` |
+
+### 2. Shared Git Hooks
+
+Git hooks are stored in `.git/hooks`, which is **shared across all worktrees**. This means:
+- Pre-commit hooks run the same way everywhere (usually good)
+- Hooks that reference specific paths may fail in worktrees
+
+### 3. Git Submodules
+
+Worktrees and submodules can have complications. When creating a worktree in a repo with submodules, you may need to run:
+
+```bash
+git submodule update --init --recursive
+```
+
+### 4. IDE/Editor Workspace Settings
+
+Some IDE features may not work seamlessly:
+- **Cached paths** in IDE project files might point to the original repo
+- **Language server caches** (like TypeScript's `tsconfig.tsbuildinfo`) are per-directory
+- **Debug configurations** with absolute paths need adjustment
+
+### 5. Branch Locking
+
+The same branch **cannot be checked out in multiple worktrees** simultaneously. This is by design to prevent conflicts, but can be inconvenient if you forget which worktree has a branch:
+
+```bash
+# Check which worktree has a branch
+git worktree list
+```
+
+### Tips to Avoid Issues
+
+1. **Use relative paths** in all scripts when possible
+2. **Use `git rev-parse --show-toplevel`** to dynamically get the repo root
+3. **Avoid hardcoded paths** in shell aliases and IDE configurations
+4. **Document worktree-specific setup** in your project's README
+5. **Test scripts from different directories** before relying on them
+
 ## Practical Workflow with AI Agents
 
 Here's a typical workflow using worktrees with AI agents:

@@ -26,6 +26,13 @@ Given a version number **MAJOR.MINOR.PATCH**, increment the:
 | **MINOR** | When you add functionality in a backward compatible manner |
 | **PATCH** | When you make backward compatible bug fixes |
 
+Commands:
+```bash
+bun run version:patch  # 0.1.0 → 0.1.1
+bun run version:minor  # 0.1.0 → 0.2.0
+bun run version:major  # 0.1.0 → 1.0.0
+```
+
 ### Examples
 
 - Breaking change to CLI commands or options → bump **MAJOR** (e.g., `1.0.0` → `2.0.0`)

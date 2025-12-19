@@ -34,11 +34,6 @@ bun link
 
 # Or run directly
 bun run start
-
-# Version bumping
-bun run version:patch  # 0.1.0 → 0.1.1
-bun run version:minor  # 0.1.0 → 0.2.0
-bun run version:major  # 0.1.0 → 1.0.0
 ```
 
 ## Usage
@@ -76,7 +71,7 @@ When creating a new branch:
 
 ## Configuration
 
-Config file: `~/.worktree-cli/config.json`
+Config file per repository: `~/.worktree-cli/repos/{repo}-<hash>/config.json`
 
 ```json
 {
@@ -115,6 +110,8 @@ src/
 │   ├── DeleteWorktree.tsx # Delete worktree wizard
 │   ├── DeleteBranchPrompt.tsx
 │   ├── PostCreatePrompt.tsx
+│   ├── PresetPicker.tsx   # Preset selection component
+│   ├── Legend.tsx         # Keyboard shortcuts legend
 │   ├── Settings.tsx       # Settings editor
 │   ├── InitialSetup.tsx   # First-run setup wizard
 │   ├── Header.tsx
@@ -133,7 +130,9 @@ src/
 │   └── wizard.ts          # Wizard type definitions
 └── utils/
     ├── git.ts             # Git command wrappers
-    └── config.ts          # Config management
+    ├── config.ts          # Config management
+    ├── presets.ts         # Preset management
+    └── terminal.ts        # Terminal utilities
 ```
 
 ## Tech Stack
