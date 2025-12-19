@@ -6,6 +6,8 @@
   Interactive TUI for managing git worktrees.
 </p>
 
+> **New to git worktrees?** Check out [Why Git Worktrees?](docs/WHY_WORKTREES.md) - a guide explaining how worktrees can supercharge your workflow, especially when working with AI coding agents.
+
 ## Features
 
 - List all worktrees with branch and path info
