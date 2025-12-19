@@ -196,7 +196,7 @@ export function InitialSetup({ repoRoot, onComplete }: InitialSetupProps) {
           <Text dimColor>
             {editing
               ? "[Enter] Save • [Esc] Cancel"
-              : "[Enter] Edit/Select • [↑↓] Navigate"}
+              : "[Enter] Edit/Select • [↑↓] Navigate • [q] Exit"}
           </Text>
         </Box>
       )}
