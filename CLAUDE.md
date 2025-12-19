@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. Remember to always follow the guidelines from that document.
 
 ## Project Overview
 
@@ -29,13 +29,13 @@ bun run version:major  # 0.1.0 → 1.0.0
 
 ## Versioning Guidelines
 
-When modifying code or creating commits, update the version in `package.json`:
+Prior to create commit, always prompt the user if he would like to update project version. Below is the type of possible updates:
 
 - **patch**: Bug fixes, minor tweaks, documentation updates
 - **minor**: New features, non-breaking changes
 - **major**: Breaking changes, major refactors
 
-If unsure which version bump is appropriate, ask the user before running the version command.
+If unsure which version bump is appropriate, ask the user before running the version command from commands section of this document.
 
 ## Architecture
 
@@ -51,5 +51,5 @@ The app uses a view-based architecture with React/Ink:
 
 - Arrow key navigation throughout the app
 - Wizard-based flows for create/delete operations using useWizard hook
-- Configuration stored in `~/.worktree-cli/config.json`
+- Configuration stored in `~/.worktree-cli/repos/{repo}.json`
 - Post-create command execution via spawned detached process
