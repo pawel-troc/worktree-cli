@@ -216,7 +216,7 @@ export function App() {
 
   // Show initial setup if this is the first run
   if (needsSetup) {
-    return <InitialSetup repoRoot={repoRoot} onComplete={handleSetupComplete} />;
+    return <InitialSetup repoRoot={repoRoot} onComplete={handleSetupComplete} onExit={exit} />;
   }
 
   return (

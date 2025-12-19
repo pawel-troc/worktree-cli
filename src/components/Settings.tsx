@@ -14,23 +14,23 @@ type SettingField = "defaultWorktreePath" | "postCreateCommand" | "filesToCopy" 
 const SETTINGS_INFO: Record<SettingField, { label: string; hint: string }> = {
   defaultWorktreePath: {
     label: "Default worktree path",
-    hint: "Use {repo} and {branch} as placeholders",
+    hint: "Where new worktrees are created. Use {repo} for repository name and {branch} for branch name.",
   },
   postCreateCommand: {
     label: "Post-create command",
-    hint: "Use {path} as placeholder. Leave empty to disable.",
+    hint: "Command to run after creating a worktree. Use {path} for the worktree path. Useful for installing dependencies.",
   },
   filesToCopy: {
     label: "Files to copy",
-    hint: "Glob patterns for files to copy to new worktrees (comma-separated)",
+    hint: "Copy these files to new worktrees (comma-separated glob patterns). E.g., .env, .env.local for environment files.",
   },
   enforceBranchConvention: {
     label: "Enforce branch naming convention",
-    hint: "Require branch prefixes when creating new branches",
+    hint: "When enabled, new branches must start with one of the allowed prefixes below.",
   },
   branchPrefixes: {
     label: "Branch prefixes",
-    hint: "Comma-separated list of allowed prefixes (e.g., feature, bugfix, hotfix)",
+    hint: "Allowed prefixes for new branches (comma-separated). E.g., feature, bugfix, hotfix.",
   },
 };
 
@@ -204,23 +204,16 @@ export function Settings({ repoRoot, onClose }: SettingsProps) {
         const isEditing = isSelected && editing;
         const isPresetPickerOpen = isSelected && showPresetPicker && field === "postCreateCommand";
         const isToggle = field === "enforceBranchConvention";
+        const currentValue = getFieldValue(config, field);
 
         return (
           <Box key={field} flexDirection="column" marginBottom={1}>
             <Box>
               <Text color={isSelected ? "cyan" : undefined}>
                 {isSelected ? "> " : "  "}
-                {info.label}:
+                {info.label}:{" "}
               </Text>
-            </Box>
-            <Box marginLeft={4}>
-              {isPresetPickerOpen ? (
-                <PresetPicker
-                  value={config.postCreateCommand}
-                  onChange={handlePresetSelect}
-                  onCancel={handlePresetCancel}
-                />
-              ) : isEditing ? (
+              {isPresetPickerOpen ? null : isEditing ? (
                 <Box>
                   <Text color="yellow">{editValue}</Text>
                   <Text color="gray">|</Text>
@@ -231,14 +224,23 @@ export function Settings({ repoRoot, onClose }: SettingsProps) {
                 </Text>
               ) : (
                 <Text dimColor>
-                  {getFieldValue(config, field) || "(empty)"}
+                  {currentValue || "(not set)"}
                 </Text>
               )}
             </Box>
-            {isSelected && !isPresetPickerOpen && (
+            {isPresetPickerOpen && (
+              <Box marginLeft={4}>
+                <PresetPicker
+                  value={config.postCreateCommand}
+                  onChange={handlePresetSelect}
+                  onCancel={handlePresetCancel}
+                />
+              </Box>
+            )}
+            {!isPresetPickerOpen && (
               <Box marginLeft={4}>
                 <Text dimColor italic>
-                  {isToggle ? "[Enter] Toggle" : info.hint}
+                  {info.hint}
                 </Text>
               </Box>
             )}
