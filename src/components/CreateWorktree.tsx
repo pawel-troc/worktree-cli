@@ -14,6 +14,7 @@ interface CreateWorktreeData extends Record<string, unknown> {
 }
 
 interface CreateWorktreeProps {
+  repoRoot: string;
   branches: Branch[];
   onSubmit: (options: {
     path: string;
@@ -24,6 +25,7 @@ interface CreateWorktreeProps {
 }
 
 export function CreateWorktree({
+  repoRoot,
   branches,
   onSubmit,
   onCancel,
@@ -39,13 +41,13 @@ export function CreateWorktree({
   // Compute suggested path when branch changes
   useEffect(() => {
     const updatePath = async () => {
-      if (currentBranch) {
-        const path = await getWorktreePath(currentBranch);
+      if (currentBranch && repoRoot) {
+        const path = await getWorktreePath(currentBranch, repoRoot);
         setSuggestedPath(path);
       }
     };
     updatePath();
-  }, [currentBranch]);
+  }, [currentBranch, repoRoot]);
 
   // Set initial branch
   useEffect(() => {
@@ -169,7 +171,7 @@ export function CreateWorktree({
       // Recompute path based on final branch selection
       const branchName =
         data.mode === "existing" ? data.branch : fullBranchName;
-      finalPath = await getWorktreePath(branchName);
+      finalPath = await getWorktreePath(branchName, repoRoot);
     }
 
     if (data.mode === "existing") {

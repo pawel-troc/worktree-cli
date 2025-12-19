@@ -4,6 +4,7 @@ import { loadConfig, saveConfig, type Config } from "../utils/config.ts";
 import { PresetPicker } from "./PresetPicker.tsx";
 
 interface SettingsProps {
+  repoRoot: string;
   onClose: () => void;
 }
 
@@ -52,7 +53,7 @@ function setFieldValue(
   return { ...config, [field]: value };
 }
 
-export function Settings({ onClose }: SettingsProps) {
+export function Settings({ repoRoot, onClose }: SettingsProps) {
   const [config, setConfig] = useState<Config | null>(null);
   const [selectedField, setSelectedField] = useState(0);
   const [editing, setEditing] = useState(false);
@@ -61,8 +62,8 @@ export function Settings({ onClose }: SettingsProps) {
   const [showPresetPicker, setShowPresetPicker] = useState(false);
 
   useEffect(() => {
-    loadConfig().then(setConfig);
-  }, []);
+    loadConfig(repoRoot).then(setConfig);
+  }, [repoRoot]);
 
   useInput(
     (input, key) => {
@@ -84,7 +85,7 @@ export function Settings({ onClose }: SettingsProps) {
           if (field) {
             const newConfig = setFieldValue(config, field, editValue);
             setConfig(newConfig);
-            saveConfig(newConfig).then(() => {
+            saveConfig(newConfig, repoRoot).then(() => {
               setSaved(true);
               setTimeout(() => setSaved(false), 2000);
             });
@@ -122,7 +123,7 @@ export function Settings({ onClose }: SettingsProps) {
     if (config) {
       const newConfig = { ...config, postCreateCommand: value };
       setConfig(newConfig);
-      saveConfig(newConfig).then(() => {
+      saveConfig(newConfig, repoRoot).then(() => {
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
       });

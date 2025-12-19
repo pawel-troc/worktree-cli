@@ -200,6 +200,20 @@ export async function getRepoRoot(): Promise<string> {
   return result.trim();
 }
 
+export async function getMainRepoRoot(): Promise<string> {
+  // Get the common git directory (shared across all worktrees)
+  const gitCommonDir = (await $`git rev-parse --git-common-dir`.text()).trim();
+
+  // If it's a relative path like ".git", we're in the main repo
+  if (gitCommonDir === ".git" || !gitCommonDir.startsWith("/")) {
+    return getRepoRoot();
+  }
+
+  // Otherwise, it's an absolute path to the main repo's .git directory
+  // e.g., /path/to/main/repo/.git -> /path/to/main/repo
+  return gitCommonDir.replace(/\/\.git$/, "");
+}
+
 export async function copyFilesToWorktree(
   targetDir: string,
   patterns: string[]

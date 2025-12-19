@@ -11,6 +11,7 @@ import { InitialSetup } from "./components/InitialSetup.tsx";
 import { useWorktrees } from "./hooks/useWorktrees.ts";
 import {
   getRepoName,
+  getMainRepoRoot,
   isGitRepository,
   removeBranch,
   copyFilesToWorktree,
@@ -36,6 +37,7 @@ export function App() {
   const [createdWorktreePath, setCreatedWorktreePath] = useState<string | null>(null);
   const [postCreateCommand, setPostCreateCommand] = useState<string>("");
   const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
+  const [repoRoot, setRepoRoot] = useState<string>("");
 
   const { worktrees, branches, loading, error, refresh, create, remove, clearError } =
     useWorktrees();
@@ -46,14 +48,16 @@ export function App() {
       setIsGitRepo(isRepo);
       if (isRepo) {
         const name = await getRepoName();
+        const root = await getMainRepoRoot();
         setRepoName(name);
-        await ensureConfigDir();
+        setRepoRoot(root);
+        await ensureConfigDir(root);
 
-        const firstRun = await isFirstRun();
+        const firstRun = await isFirstRun(root);
         setNeedsSetup(firstRun);
 
         if (!firstRun) {
-          const config = await loadConfig();
+          const config = await loadConfig(root);
           setPostCreateCommand(config.postCreateCommand);
         }
       }
@@ -117,7 +121,7 @@ export function App() {
   }) => {
     try {
       const worktreePath = await create(options);
-      const config = await loadConfig();
+      const config = await loadConfig(repoRoot);
       setPostCreateCommand(config.postCreateCommand);
 
       // Copy configured files to the new worktree
@@ -156,13 +160,13 @@ export function App() {
   };
 
   const handleSettingsClose = async () => {
-    const config = await loadConfig();
+    const config = await loadConfig(repoRoot);
     setPostCreateCommand(config.postCreateCommand);
     setView("list");
   };
 
   const handleSetupComplete = async () => {
-    const config = await loadConfig();
+    const config = await loadConfig(repoRoot);
     setPostCreateCommand(config.postCreateCommand);
     setNeedsSetup(false);
   };
@@ -212,7 +216,7 @@ export function App() {
 
   // Show initial setup if this is the first run
   if (needsSetup) {
-    return <InitialSetup onComplete={handleSetupComplete} />;
+    return <InitialSetup repoRoot={repoRoot} onComplete={handleSetupComplete} />;
   }
 
   return (
@@ -229,6 +233,7 @@ export function App() {
 
       {view === "create" && (
         <CreateWorktree
+          repoRoot={repoRoot}
           branches={branches}
           onSubmit={handleCreate}
           onCancel={() => setView("list")}
@@ -243,7 +248,7 @@ export function App() {
         />
       )}
 
-      {view === "settings" && <Settings onClose={handleSettingsClose} />}
+      {view === "settings" && <Settings repoRoot={repoRoot} onClose={handleSettingsClose} />}
 
       {view === "postCreate" && createdWorktreePath && (
         <PostCreatePrompt
