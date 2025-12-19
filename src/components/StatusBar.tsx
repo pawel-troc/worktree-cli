@@ -1,5 +1,6 @@
 import React from "react";
 import { Box, Text } from "ink";
+import { Legend } from "./Legend.tsx";
 
 export type View = "list" | "create" | "delete" | "settings" | "postCreate";
 
@@ -28,7 +29,7 @@ export function StatusBar({ view, error }: StatusBarProps) {
       )}
       {shortcutText && (
         <Box>
-          <Text dimColor>{shortcutText}</Text>
+          <Legend text={shortcutText} />
         </Box>
       )}
     </Box>

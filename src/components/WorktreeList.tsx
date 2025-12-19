@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 import type { Worktree } from "../utils/git.ts";
+import { Legend } from "./Legend.tsx";
 
 interface WorktreeListProps {
   worktrees: Worktree[];
@@ -24,7 +25,9 @@ export function WorktreeList({
   if (worktrees.length === 0) {
     return (
       <Box>
-        <Text dimColor>No worktrees found. Press [c] to create one.</Text>
+        <Text dimColor>No worktrees found. Press </Text>
+        <Text color="cyan">[c]</Text>
+        <Text dimColor> to create one.</Text>
       </Box>
     );
   }

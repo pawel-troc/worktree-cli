@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Box, Text, useInput } from "ink";
 import { loadConfig, saveConfig, type Config } from "../utils/config.ts";
 import { PresetPicker } from "./PresetPicker.tsx";
+import { Legend } from "./Legend.tsx";
 
 interface SettingsProps {
   repoRoot: string;
@@ -193,11 +194,13 @@ export function Settings({ repoRoot, onClose }: SettingsProps) {
 
       {!showPresetPicker && (
         <Box marginTop={1}>
-          <Text dimColor>
-            {editing
-              ? "[Enter] Save • [Esc] Cancel"
-              : "[Enter] Edit • [↑↓] Navigate • [Esc] Back"}
-          </Text>
+          <Legend
+            text={
+              editing
+                ? "[Enter] Save • [Esc] Cancel"
+                : "[Enter] Edit • [↑↓] Navigate • [Esc] Back"
+            }
+          />
         </Box>
       )}
     </Box>

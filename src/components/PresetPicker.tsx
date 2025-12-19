@@ -5,6 +5,7 @@ import {
   getPresetByCommand,
   type CommandPreset,
 } from "../utils/presets.ts";
+import { Legend } from "./Legend.tsx";
 
 interface PresetPickerProps {
   value: string;
@@ -100,7 +101,7 @@ export function PresetPicker({ value, onChange, onCancel }: PresetPickerProps) {
           </Text>
         </Box>
         <Box marginTop={1}>
-          <Text dimColor>[Enter] Save • [Esc] Back to presets</Text>
+          <Legend text="[Enter] Save • [Esc] Back to presets" />
         </Box>
       </Box>
     );
@@ -131,7 +132,7 @@ export function PresetPicker({ value, onChange, onCancel }: PresetPickerProps) {
         </Text>
       </Box>
       <Box marginTop={1}>
-        <Text dimColor>[↑↓] Navigate • [Enter] Select • [Esc] Cancel</Text>
+        <Legend text="[↑↓] Navigate • [Enter] Select • [Esc] Cancel" />
       </Box>
     </Box>
   );

@@ -84,7 +84,13 @@ export function WizardSummary<TData extends Record<string, unknown>>({
             <Text color={isSelected ? "cyan" : undefined} bold={isSelected}>
               {formatStepValue(step)}
             </Text>
-            {isSelected && <Text dimColor> [Enter to edit]</Text>}
+            {isSelected && (
+              <>
+                <Text dimColor> </Text>
+                <Text color="cyan">[Enter]</Text>
+                <Text dimColor> to edit</Text>
+              </>
+            )}
           </Box>
         );
       })}

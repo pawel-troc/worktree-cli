@@ -7,6 +7,7 @@ import {
   type Config,
 } from "../utils/config.ts";
 import { PresetPicker } from "./PresetPicker.tsx";
+import { Legend } from "./Legend.tsx";
 
 interface InitialSetupProps {
   repoRoot: string;
@@ -193,11 +194,13 @@ export function InitialSetup({ repoRoot, onComplete }: InitialSetupProps) {
 
       {!showPresetPicker && (
         <Box marginTop={1}>
-          <Text dimColor>
-            {editing
-              ? "[Enter] Save • [Esc] Cancel"
-              : "[Enter] Edit/Select • [↑↓] Navigate • [q] Exit"}
-          </Text>
+          <Legend
+            text={
+              editing
+                ? "[Enter] Save • [Esc] Cancel"
+                : "[Enter] Edit/Select • [↑↓] Navigate • [q] Exit"
+            }
+          />
         </Box>
       )}
     </Box>
