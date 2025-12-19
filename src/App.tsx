@@ -111,7 +111,7 @@ export function App() {
         setSelectedIndex((i) => (i < worktrees.length - 1 ? i + 1 : 0));
       }
     },
-    { isActive: view === "list" }
+    { isActive: view === "list" && !needsSetup }
   );
 
   const handleCreate = async (options: {
