@@ -174,6 +174,9 @@ export function App() {
   const handleDelete = async (options: { force: boolean; deleteBranch: boolean }) => {
     const wt = worktrees[selectedIndex];
     if (!wt) return;
+
+    const wasCurrentWorktree = wt.isCurrent;
+
     try {
       await remove(wt.path, options.force);
       setSelectedIndex((i) => Math.max(0, i - 1));
@@ -186,6 +189,14 @@ export function App() {
         } catch {
           // Ignore errors - branch might already be deleted
         }
+      }
+
+      // If we deleted the current worktree, exit CLI and show navigation command
+      if (wasCurrentWorktree) {
+        console.log(`\nWorktree deleted. Run the following command to navigate out:\n`);
+        console.log(`  cd ${repoRoot}\n`);
+        exit();
+        return;
       }
 
       setView("list");

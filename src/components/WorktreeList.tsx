@@ -56,6 +56,7 @@ export function WorktreeList({
             </Text>
             <Text dimColor> - </Text>
             <Text dimColor={!isSelected}>{wt.path}</Text>
+            {wt.isCurrent && <Text color="green"> [current]</Text>}
             {wt.isLocked && (
               <Text color="red"> [locked{wt.lockReason ? `: ${wt.lockReason}` : ""}]</Text>
             )}

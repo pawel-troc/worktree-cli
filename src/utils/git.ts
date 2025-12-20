@@ -9,6 +9,7 @@ export interface Worktree {
   isLocked: boolean;
   lockReason?: string;
   hasChanges: boolean;
+  isCurrent: boolean;
 }
 
 export interface Branch {
@@ -48,17 +49,22 @@ export async function getWorktrees(): Promise<Worktree[]> {
   const worktrees: Worktree[] = [];
   let current: Partial<Worktree> = {};
 
+  // Get current working directory to detect which worktree we're in
+  const cwd = process.cwd();
+
   for (const line of result.split("\n")) {
     if (line.startsWith("worktree ")) {
       if (current.path) {
         worktrees.push(current as Worktree);
       }
+      const worktreePath = line.substring(9);
       current = {
-        path: line.substring(9),
+        path: worktreePath,
         isBare: false,
         isDetached: false,
         isLocked: false,
         hasChanges: false,
+        isCurrent: cwd === worktreePath || cwd.startsWith(worktreePath + "/"),
       };
     } else if (line.startsWith("HEAD ")) {
       current.head = line.substring(5);
