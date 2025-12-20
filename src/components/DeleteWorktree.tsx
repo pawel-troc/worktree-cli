@@ -43,8 +43,12 @@ export function DeleteWorktree({
           { value: "no", label: "No, keep it" },
         ];
 
-    // Build prompt with warning if there are uncommitted changes
+    // Build prompt with warnings
     let prompt = `Delete worktree "${branchDisplay}"?`;
+    if (worktree.isCurrent) {
+      prompt += "\n\n⚠️  Warning: You are currently inside this worktree!";
+      prompt += "\n   The CLI will exit after deletion and you'll need to navigate out.";
+    }
     if (worktree.hasChanges) {
       prompt += "\n\n⚠️  Warning: This worktree has uncommitted changes that will be lost!";
     }
