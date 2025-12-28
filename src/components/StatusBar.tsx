@@ -2,7 +2,7 @@ import React from "react";
 import { Box, Text } from "ink";
 import { Legend } from "./Legend.tsx";
 
-export type View = "list" | "create" | "delete" | "settings" | "postCreate";
+export type View = "list" | "create" | "delete" | "settings" | "postCreate" | "tmux";
 
 interface StatusBarProps {
   view: View;
@@ -16,6 +16,7 @@ export function StatusBar({ view, error }: StatusBarProps) {
     delete: "[Enter] Confirm • [Esc] Cancel • [↑↓] Select",
     settings: "", // Settings component handles its own legend
     postCreate: "[Enter] Confirm • [↑↓] Select • [Esc] Stay",
+    tmux: "", // TmuxView handles its own legend
   };
 
   const shortcutText = shortcuts[view];

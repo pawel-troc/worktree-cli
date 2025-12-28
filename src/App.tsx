@@ -8,6 +8,8 @@ import { DeleteWorktree } from "./components/DeleteWorktree.tsx";
 import { Settings } from "./components/Settings.tsx";
 import { PostCreatePrompt } from "./components/PostCreatePrompt.tsx";
 import { InitialSetup } from "./components/InitialSetup.tsx";
+import { TmuxView, type WorktreeSession } from "./components/TmuxView.tsx";
+import { createSessionName } from "./utils/tmux.ts";
 import { useWorktrees } from "./hooks/useWorktrees.ts";
 import {
   getRepoName,
@@ -38,6 +40,7 @@ export function App() {
   const [postCreateCommand, setPostCreateCommand] = useState<string>("");
   const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
   const [repoRoot, setRepoRoot] = useState<string>("");
+  const [tmuxSession, setTmuxSession] = useState<WorktreeSession | null>(null);
 
   const { worktrees, branches, loading, error, refresh, create, remove, clearError } =
     useWorktrees();
@@ -154,6 +157,27 @@ export function App() {
     setView("list");
   };
 
+  const handlePostCreateTmux = () => {
+    if (createdWorktreePath && postCreateCommand) {
+      const command = expandCommand(postCreateCommand, createdWorktreePath);
+      const sessionName = createSessionName(createdWorktreePath);
+
+      setTmuxSession({
+        path: createdWorktreePath,
+        command: command,
+        sessionName: sessionName,
+      });
+
+      setCreatedWorktreePath(null);
+      setView("tmux");
+    }
+  };
+
+  const handleTmuxExit = () => {
+    setTmuxSession(null);
+    setView("list");
+  };
+
   const handleOpenWorktree = (worktreePath: string) => {
     const command = expandCommand(postCreateCommand, worktreePath);
     executePostCreateCommand(command, worktreePath);
@@ -267,7 +291,12 @@ export function App() {
           command={expandCommand(postCreateCommand, createdWorktreePath)}
           onSwitch={handlePostCreateSwitch}
           onStay={handlePostCreateStay}
+          onTmux={handlePostCreateTmux}
         />
+      )}
+
+      {view === "tmux" && tmuxSession && (
+        <TmuxView initialSession={tmuxSession} onExit={handleTmuxExit} />
       )}
 
       <StatusBar view={view} error={error} />
