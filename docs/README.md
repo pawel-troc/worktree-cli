@@ -29,25 +29,59 @@ This demonstrates:
 - Switching between main screen and terminal
 - Clean restoration of original screen
 
+### 🚀 [multi-terminal-tabs.md](./multi-terminal-tabs.md)
+**Advanced research document** covering multi-terminal tab management:
+- Can you have multiple embedded terminals with browser-like tabs?
+- PTY-based approach vs alternate screen buffer limitations
+- Architecture for managing multiple simultaneous terminals
+- Output buffering and tab navigation
+- Implementation complexity analysis
+
+**TL;DR**: ✅ Multi-terminal tabs are feasible using PTY-based approach with Ink, but significantly more complex than single terminal.
+
+### 🎯 [poc-multi-terminal.tsx](./poc-multi-terminal.tsx)
+**Advanced POC demo** showing multi-terminal tab management.
+
+```bash
+# Run the multi-terminal demo
+bun run docs/poc-multi-terminal.tsx
+```
+
+This demonstrates:
+- Multiple embedded terminals running simultaneously
+- Browser-like tab bar showing active terminal
+- Keyboard shortcuts for tab navigation (Ctrl+1-9)
+- Creating new tabs (Ctrl+T)
+- Closing tabs (Ctrl+W)
+- Output buffering for each terminal
+
 ## Quick Summary
 
 ### Is it possible?
 **YES!** You can embed terminal sessions within worktree-cli without spawning external windows.
 
 ### How does it work?
-Two main approaches:
+Three main approaches:
 
-1. **Alternate Screen Buffer** (Recommended) ⭐
+1. **Alternate Screen Buffer** (Recommended for single terminal) ⭐
    - Uses ANSI escape codes to create a secondary screen
    - User can switch to a full shell, then return to TUI
    - Simple, reliable, works everywhere
    - Similar to how vim/less preserve your terminal state
+   - **Limitation**: Only ONE terminal at a time
 
-2. **Embedded PTY with Bun.Terminal**
+2. **Embedded PTY with Bun.Terminal** (For advanced integration)
    - Spawns a pseudo-terminal within the app
    - Render PTY output in Ink components
    - More complex but more integrated
    - Requires Bun v1.3.5+ (Linux/macOS only)
+
+3. **Multi-Terminal Tabs** (For power users) 🚀
+   - Multiple PTY instances running simultaneously
+   - Browser-like tab management with keyboard shortcuts
+   - Each terminal buffers its output independently
+   - Complex but provides tmux-like experience
+   - See [multi-terminal-tabs.md](./multi-terminal-tabs.md) for details
 
 ### What are the limitations?
 
@@ -58,11 +92,12 @@ Two main approaches:
 
 ### Recommended next steps
 
-1. ✅ Try the POC demo: `bun run docs/poc-example.ts`
-2. ✅ Read the full research: [embedded-terminal-research.md](./embedded-terminal-research.md)
-3. 🎯 Implement the alternate screen buffer approach (1-2 hours of work)
-4. 🔄 Gather user feedback
-5. 🚀 Consider advanced PTY integration if needed
+1. ✅ Try the simple POC: `bun run docs/poc-example.ts`
+2. ✅ Try the multi-terminal POC: `bun run docs/poc-multi-terminal.tsx`
+3. ✅ Read the full research: [embedded-terminal-research.md](./embedded-terminal-research.md)
+4. ✅ Read multi-terminal design: [multi-terminal-tabs.md](./multi-terminal-tabs.md)
+5. 🎯 Decide on approach based on complexity vs features
+6. 🔄 Implement and gather user feedback
 
 ## Key Benefits
 
