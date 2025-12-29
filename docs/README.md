@@ -2,6 +2,27 @@
 
 This directory contains research and proof-of-concept implementations for embedding terminal sessions within worktree-cli.
 
+## 🚀 Implementation Status
+
+✅ **Branch 1 (Simple)**: READY TO USE!
+- Branch: `claude/embedded-terminal-simple-1YG9V`
+- Status: Fully implemented
+- Try it: `git checkout claude/embedded-terminal-simple-1YG9V && bun link && wt`
+
+📋 **Branch 2 (Sequential)**: Implementation guide available
+- Branch: `claude/embedded-terminal-sequential-1YG9V`
+- Status: Planned with complete guide
+- See: [sequential-navigation-impl.md](./sequential-navigation-impl.md)
+
+📋 **Branch 3 (Multi-Tab)**: Architecture documented
+- Branch: `claude/embedded-terminal-tabs-1YG9V`
+- Status: Planned with design doc
+- See: [multi-terminal-tabs-impl.md](./multi-terminal-tabs-impl.md)
+
+👉 **[VIEW FULL COMPARISON](./BRANCH_COMPARISON.md)** - Compare all three approaches
+
+---
+
 ## Files
 
 ### 📄 [embedded-terminal-research.md](./embedded-terminal-research.md)
@@ -92,12 +113,28 @@ Three main approaches:
 
 ### Recommended next steps
 
-1. ✅ Try the simple POC: `bun run docs/poc-example.ts`
-2. ✅ Try the multi-terminal POC: `bun run docs/poc-multi-terminal.tsx`
-3. ✅ Read the full research: [embedded-terminal-research.md](./embedded-terminal-research.md)
-4. ✅ Read multi-terminal design: [multi-terminal-tabs.md](./multi-terminal-tabs.md)
-5. 🎯 Decide on approach based on complexity vs features
-6. 🔄 Implement and gather user feedback
+1. ✅ **Try Branch 1 (Simple)** - It's ready now!
+   ```bash
+   git checkout claude/embedded-terminal-simple-1YG9V
+   bun link
+   wt
+   ```
+
+2. ✅ Read the **[Branch Comparison](./BRANCH_COMPARISON.md)** to decide your approach
+
+3. ✅ Try the POC demos:
+   - Simple: `bun run docs/poc-example.ts`
+   - Multi-terminal: `bun run docs/poc-multi-terminal.tsx`
+
+4. 📋 If you want sequential navigation:
+   - Follow guide: [sequential-navigation-impl.md](./sequential-navigation-impl.md)
+   - Estimated time: 4-8 hours
+
+5. 📋 If you want multi-terminal tabs:
+   - See architecture: [multi-terminal-tabs-impl.md](./multi-terminal-tabs-impl.md)
+   - Estimated time: 16-24 hours
+
+**Recommendation**: Ship Branch 1, gather feedback, then decide if you need more features!
 
 ## Key Benefits
 
