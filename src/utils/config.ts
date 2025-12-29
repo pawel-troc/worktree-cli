@@ -25,6 +25,7 @@ export interface Config {
   filesToCopy: string[];
   enforceBranchConvention: boolean;
   branchPrefixes: string[];
+  useEmbeddedTerminal: boolean;
 }
 
 const DEFAULT_CONFIG: Config = {
@@ -33,6 +34,7 @@ const DEFAULT_CONFIG: Config = {
   filesToCopy: [".env*"],
   enforceBranchConvention: false,
   branchPrefixes: ["feature", "bugfix"],
+  useEmbeddedTerminal: true, // Default to embedded terminal
 };
 
 export async function ensureConfigDir(repoRoot: string): Promise<void> {

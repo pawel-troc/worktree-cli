@@ -9,7 +9,7 @@ interface SettingsProps {
   onClose: () => void;
 }
 
-type SettingField = "defaultWorktreePath" | "postCreateCommand" | "filesToCopy" | "enforceBranchConvention" | "branchPrefixes";
+type SettingField = "defaultWorktreePath" | "postCreateCommand" | "filesToCopy" | "useEmbeddedTerminal" | "enforceBranchConvention" | "branchPrefixes";
 
 const SETTINGS_INFO: Record<SettingField, { label: string; hint: string }> = {
   defaultWorktreePath: {
@@ -23,6 +23,10 @@ const SETTINGS_INFO: Record<SettingField, { label: string; hint: string }> = {
   filesToCopy: {
     label: "Files to copy",
     hint: "Copy these files to new worktrees (comma-separated glob patterns). E.g., .env, .env.local for environment files.",
+  },
+  useEmbeddedTerminal: {
+    label: "Use embedded terminal",
+    hint: "When enabled, opens terminals inside worktree-cli (alternate screen buffer). When disabled, spawns external terminal windows.",
   },
   enforceBranchConvention: {
     label: "Enforce branch naming convention",
@@ -38,6 +42,7 @@ const BASE_FIELDS: SettingField[] = [
   "defaultWorktreePath",
   "postCreateCommand",
   "filesToCopy",
+  "useEmbeddedTerminal",
   "enforceBranchConvention",
 ];
 
@@ -50,6 +55,9 @@ function getFieldValue(config: Config, field: SettingField): string {
   }
   if (field === "enforceBranchConvention") {
     return config.enforceBranchConvention ? "Yes" : "No";
+  }
+  if (field === "useEmbeddedTerminal") {
+    return config.useEmbeddedTerminal ? "Yes" : "No";
   }
   return config[field];
 }
@@ -82,6 +90,9 @@ function setFieldValue(
   }
   if (field === "enforceBranchConvention") {
     return { ...config, enforceBranchConvention: !config.enforceBranchConvention };
+  }
+  if (field === "useEmbeddedTerminal") {
+    return { ...config, useEmbeddedTerminal: !config.useEmbeddedTerminal };
   }
   return { ...config, [field]: value };
 }
@@ -151,7 +162,7 @@ export function Settings({ repoRoot, onClose }: SettingsProps) {
         if (field) {
           if (field === "postCreateCommand") {
             setShowPresetPicker(true);
-          } else if (field === "enforceBranchConvention") {
+          } else if (field === "enforceBranchConvention" || field === "useEmbeddedTerminal") {
             // Toggle boolean field
             const newConfig = setFieldValue(config, field, "");
             setConfig(newConfig);
@@ -203,7 +214,7 @@ export function Settings({ repoRoot, onClose }: SettingsProps) {
         const isSelected = i === selectedField;
         const isEditing = isSelected && editing;
         const isPresetPickerOpen = isSelected && showPresetPicker && field === "postCreateCommand";
-        const isToggle = field === "enforceBranchConvention";
+        const isToggle = field === "enforceBranchConvention" || field === "useEmbeddedTerminal";
         const currentValue = getFieldValue(config, field);
 
         return (
@@ -219,8 +230,14 @@ export function Settings({ repoRoot, onClose }: SettingsProps) {
                   <Text color="gray">|</Text>
                 </Box>
               ) : isToggle ? (
-                <Text color={config.enforceBranchConvention ? "green" : "red"}>
-                  {config.enforceBranchConvention ? "Yes" : "No"}
+                <Text color={
+                  field === "enforceBranchConvention"
+                    ? (config.enforceBranchConvention ? "green" : "red")
+                    : field === "useEmbeddedTerminal"
+                    ? (config.useEmbeddedTerminal ? "green" : "red")
+                    : undefined
+                }>
+                  {currentValue}
                 </Text>
               ) : (
                 <Text dimColor>

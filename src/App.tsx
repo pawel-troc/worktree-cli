@@ -22,7 +22,11 @@ import {
   expandCommand,
   isFirstRun,
 } from "./utils/config.ts";
-import { executePostCreateCommand } from "./utils/terminal.ts";
+import {
+  executePostCreateCommand,
+  executeInEmbeddedTerminal,
+  openEmbeddedShell,
+} from "./utils/terminal.ts";
 import pkg from "../package.json";
 
 const VERSION = pkg.version;
@@ -140,11 +144,28 @@ export function App() {
     }
   };
 
-  const handlePostCreateSwitch = () => {
-    if (createdWorktreePath && postCreateCommand) {
-      const command = expandCommand(postCreateCommand, createdWorktreePath);
+  const handlePostCreateSwitch = async () => {
+    if (!createdWorktreePath || !postCreateCommand) {
+      setCreatedWorktreePath(null);
+      setView("list");
+      return;
+    }
+
+    const config = await loadConfig(repoRoot);
+    const command = expandCommand(postCreateCommand, createdWorktreePath);
+
+    if (config.useEmbeddedTerminal) {
+      // Use embedded terminal with alternate screen buffer
+      try {
+        await executeInEmbeddedTerminal(command, createdWorktreePath);
+      } catch (error) {
+        console.error('Embedded terminal error:', error);
+      }
+    } else {
+      // Use external terminal (original behavior)
       executePostCreateCommand(command, createdWorktreePath);
     }
+
     setCreatedWorktreePath(null);
     setView("list");
   };
@@ -154,9 +175,21 @@ export function App() {
     setView("list");
   };
 
-  const handleOpenWorktree = (worktreePath: string) => {
-    const command = expandCommand(postCreateCommand, worktreePath);
-    executePostCreateCommand(command, worktreePath);
+  const handleOpenWorktree = async (worktreePath: string) => {
+    const config = await loadConfig(repoRoot);
+
+    if (config.useEmbeddedTerminal) {
+      // Open embedded shell directly
+      try {
+        await openEmbeddedShell(worktreePath);
+      } catch (error) {
+        console.error('Embedded shell error:', error);
+      }
+    } else {
+      // Use external terminal (original behavior)
+      const command = expandCommand(postCreateCommand, worktreePath);
+      executePostCreateCommand(command, worktreePath);
+    }
   };
 
   const handleSettingsClose = async () => {

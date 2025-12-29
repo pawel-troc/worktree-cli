@@ -113,6 +113,117 @@ export function isCliTool(command: string): boolean {
 }
 
 /**
+ * Opens a shell in the alternate screen buffer.
+ * When user exits shell, returns to the original screen.
+ */
+export function openEmbeddedShell(workingDir: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    // Enable alternate screen buffer
+    process.stdout.write('\x1b[?1049h');
+
+    // Clear the alternate screen and move cursor to top-left
+    process.stdout.write('\x1b[2J\x1b[H');
+
+    // Print welcome message
+    process.stdout.write('\x1b[1;36m'); // Cyan bold
+    process.stdout.write('╔════════════════════════════════════════════════╗\n');
+    process.stdout.write('║     Embedded Terminal - worktree-cli          ║\n');
+    process.stdout.write('╚════════════════════════════════════════════════╝\x1b[0m\n\n');
+    process.stdout.write(`Working directory: \x1b[36m${workingDir}\x1b[0m\n`);
+    process.stdout.write('\x1b[2mType "exit" or press Ctrl+D to return\x1b[0m\n\n');
+
+    // Get the user's shell
+    const shell = process.env.SHELL || '/bin/bash';
+
+    // Spawn shell with inherited stdio (direct terminal access)
+    const proc = spawn(shell, [], {
+      cwd: workingDir,
+      stdio: 'inherit',
+      env: process.env,
+    });
+
+    proc.on('exit', (code) => {
+      // Restore original screen buffer
+      process.stdout.write('\x1b[?1049l');
+      resolve();
+    });
+
+    proc.on('error', (err) => {
+      // Restore screen even on error
+      process.stdout.write('\x1b[?1049l');
+      reject(err);
+    });
+  });
+}
+
+/**
+ * Executes a command in the alternate screen buffer.
+ * Shows output, waits for user input, then returns.
+ */
+export async function executeInEmbeddedTerminal(
+  command: string,
+  workingDir: string
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    // Enable alternate screen
+    process.stdout.write('\x1b[?1049h');
+
+    // Clear and position cursor
+    process.stdout.write('\x1b[2J\x1b[H');
+
+    // Header
+    process.stdout.write('\x1b[1;36m'); // Cyan bold
+    process.stdout.write('╔════════════════════════════════════════════════╗\n');
+    process.stdout.write('║     Executing Command - worktree-cli          ║\n');
+    process.stdout.write('╚════════════════════════════════════════════════╝\x1b[0m\n\n');
+    process.stdout.write(`Command: \x1b[33m${command}\x1b[0m\n`);
+    process.stdout.write(`Directory: \x1b[36m${workingDir}\x1b[0m\n`);
+    process.stdout.write('─'.repeat(50) + '\n\n');
+
+    const proc = spawn('/bin/sh', ['-c', command], {
+      cwd: workingDir,
+      stdio: 'inherit',
+      env: process.env,
+    });
+
+    proc.on('exit', (code) => {
+      // Show completion message
+      process.stdout.write('\n' + '─'.repeat(50) + '\n');
+      if (code === 0) {
+        process.stdout.write('\x1b[32m✓ Command completed successfully\x1b[0m\n\n');
+      } else {
+        process.stdout.write(`\x1b[31m✗ Command exited with code ${code}\x1b[0m\n\n`);
+      }
+
+      process.stdout.write('\x1b[2mPress any key to return to worktree-cli...\x1b[0m');
+
+      // Enable raw mode to capture single keypress
+      process.stdin.setRawMode(true);
+      process.stdin.resume();
+
+      const handler = () => {
+        process.stdin.off('data', handler);
+        process.stdin.setRawMode(false);
+        process.stdin.pause();
+
+        // Restore original screen
+        process.stdout.write('\x1b[?1049l');
+
+        resolve();
+      };
+
+      process.stdin.once('data', handler);
+    });
+
+    proc.on('error', (err) => {
+      // Restore screen on error
+      process.stdout.write('\x1b[?1049l');
+      reject(err);
+    });
+  });
+}
+
+/**
  * Executes a post-create command appropriately.
  * - Terminal openers (open -a Terminal) run directly
  * - CLI tools (claude, code) open in a new terminal tab
