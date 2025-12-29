@@ -8,6 +8,7 @@ import { DeleteWorktree } from "./components/DeleteWorktree.tsx";
 import { Settings } from "./components/Settings.tsx";
 import { PostCreatePrompt } from "./components/PostCreatePrompt.tsx";
 import { InitialSetup } from "./components/InitialSetup.tsx";
+import { MultiTerminal } from "./components/MultiTerminal.tsx";
 import { useWorktrees } from "./hooks/useWorktrees.ts";
 import {
   getRepoName,
@@ -42,6 +43,10 @@ export function App() {
   const [postCreateCommand, setPostCreateCommand] = useState<string>("");
   const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
   const [repoRoot, setRepoRoot] = useState<string>("");
+  const [multiTerminalMode, setMultiTerminalMode] = useState<{
+    workingDir: string;
+    label: string;
+  } | null>(null);
 
   const { worktrees, branches, loading, error, refresh, create, remove, clearError } =
     useWorktrees();
@@ -179,12 +184,9 @@ export function App() {
     const config = await loadConfig(repoRoot);
 
     if (config.useEmbeddedTerminal) {
-      // Open embedded shell directly
-      try {
-        await openEmbeddedShell(worktreePath);
-      } catch (error) {
-        console.error('Embedded shell error:', error);
-      }
+      // Open multi-terminal mode
+      const label = worktreePath.split('/').pop() || 'worktree';
+      setMultiTerminalMode({ workingDir: worktreePath, label });
     } else {
       // Use external terminal (original behavior)
       const command = expandCommand(postCreateCommand, worktreePath);
@@ -261,6 +263,17 @@ export function App() {
   // Show initial setup if this is the first run
   if (needsSetup) {
     return <InitialSetup repoRoot={repoRoot} onComplete={handleSetupComplete} onExit={exit} />;
+  }
+
+  // Show multi-terminal mode
+  if (multiTerminalMode) {
+    return (
+      <MultiTerminal
+        initialWorkingDir={multiTerminalMode.workingDir}
+        initialLabel={multiTerminalMode.label}
+        onExit={() => setMultiTerminalMode(null)}
+      />
+    );
   }
 
   return (

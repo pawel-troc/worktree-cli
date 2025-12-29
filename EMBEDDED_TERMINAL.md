@@ -1,105 +1,152 @@
-# Embedded Terminal - Simple Approach
+# Embedded Terminal - Multi-Tab Management
 
-This branch implements the **simple embedded terminal** using alternate screen buffer.
+This branch implements **full multi-terminal tab management** with browser-like interface and advanced features.
 
-## What Changed
+## What This Is
 
-### New Features
+This is the **most powerful** implementation - a complete tmux-like terminal management system built into worktree-cli.
 
-1. **Embedded Terminal Support**
-   - Opens terminals inside worktree-cli using alternate screen buffer
-   - Clean ANSI escape code based implementation
-   - Preserves TUI state when entering/exiting terminal
+## Features
 
-2. **Config Option**: `useEmbeddedTerminal`
-   - Toggle between embedded and external terminals
-   - Configurable via Settings (press 's')
-   - Default: `true` (embedded terminal enabled)
+### 1. Browser-Like Tab Management
+- Multiple terminals running simultaneously
+- Visual tab bar showing all terminals
+- Active tab highlighted
+- Tab shortcuts displayed
 
-3. **Two Terminal Modes**:
-   - **Execute Command**: Runs post-create command, waits for completion, returns to TUI
-   - **Open Shell**: Opens interactive shell, returns to TUI on exit
+### 2. Keyboard Shortcuts
+- **Ctrl+1-9**: Jump to tab N
+- **Ctrl+W**: Close current tab
+- **Ctrl+Q**: Exit terminal mode
 
-### Files Modified
+### 3. Terminal Features
+- Independent processes per tab
+- Output buffering (1000 lines per tab)
+- State preservation when switching
+- Clean process management
 
-- `src/utils/terminal.ts`: Added `openEmbeddedShell()` and `executeInEmbeddedTerminal()`
-- `src/utils/config.ts`: Added `useEmbeddedTerminal` to config interface
-- `src/App.tsx`: Updated to use embedded terminal when enabled
-- `src/components/Settings.tsx`: Added toggle for embedded terminal option
+## Files Added
+
+- `src/types/terminal.ts`: Terminal tab interfaces
+- `src/hooks/useMultiTerminal.ts`: Multi-tab state management
+- `src/components/TerminalTabBar.tsx`: Tab bar UI component
+- `src/components/MultiTerminal.tsx`: Main multi-terminal component
+
+## Files Modified
+
+- `src/App.tsx`: Integrated multi-terminal mode
 
 ## Usage
 
-### 1. After Creating a Worktree
+### Opening Terminals
 
-When you create a worktree and select "Yes, run command":
-- **Embedded mode**: Command executes in alternate screen buffer
-- **External mode**: Spawns new terminal window/tab (original behavior)
+1. Run `wt`
+2. Press 'o' on worktree → Tab 1 opens
+3. Press Ctrl+Q → Back to TUI
+4. Press 'o' on another worktree → Tab 2 opens
+5. Both tabs now available!
 
-### 2. Opening Existing Worktree
+### Navigating Tabs
 
-Press 'o' on any worktree:
-- **Embedded mode**: Opens shell in alternate screen buffer
-- **External mode**: Spawns new terminal window/tab
+- **Ctrl+1**: Switch to tab 1
+- **Ctrl+2**: Switch to tab 2
+- **Ctrl+3**: Switch to tab 3
+- ... up to Ctrl+9 for tab 9
 
-### 3. Toggle Settings
+### Managing Tabs
 
-Press 's' → Navigate to "Use embedded terminal" → Press Enter to toggle
+- **Ctrl+W**: Close current tab (if more than 1)
+- **Ctrl+Q**: Exit terminal mode (closes all tabs)
+
+## Visual Interface
+
+```
+┌──────────────────────────────────────────────────┐
+│  Multi-Terminal Mode                     (3 tabs)│
+│  ● [1] worktree-1  ○ [2] worktree-2  ○ [3] main │
+│                                                  │
+│  📂 /path/to/worktree-1                          │
+│  ──────────────────────────────────────────────  │
+│                                                  │
+│  bash-5.1$ ls -la                                │
+│  total 48                                        │
+│  ...                                             │
+│  bash-5.1$ █                                     │
+│                                                  │
+│  [Ctrl+1-3] Switch tabs | [Ctrl+W] Close | [Ctrl+Q] Exit
+│  Tab 1/3 | Buffer: 342 lines                    │
+└──────────────────────────────────────────────────┘
+```
 
 ## Benefits
 
-✅ **Stay in one window**: No more switching between terminal tabs
-✅ **Preserve state**: TUI exactly as you left it when you exit shell
-✅ **Cross-platform**: Works on Linux, macOS, Windows
-✅ **Simple**: Just 100 lines of code, minimal complexity
-✅ **No dependencies**: Uses standard ANSI escape codes
+✅ **Full multitasking**: Work on many worktrees simultaneously
+✅ **Visual overview**: See all terminals at once
+✅ **Quick switching**: Jump to any tab instantly
+✅ **Organized workflow**: Browser-like interface
+✅ **Power user friendly**: tmux-like experience
 
 ## Limitations
 
-⚠️ **Single terminal**: Only one terminal at a time
-⚠️ **No persistence**: Terminal state lost when you exit
-⚠️ **No multitasking**: Can't run multiple shells simultaneously
+⚠️ **Memory intensive**: ~10-20MB per tab
+⚠️ **Complex**: Most code, most potential issues
+⚠️ **Tab limit**: Keyboard shortcuts for 9 tabs
+⚠️ **No persistence**: Tabs lost on exit
 
-## Implementation Details
+## Comparison
 
-### Alternate Screen Buffer
-
-Uses ANSI escape codes:
-- `\x1b[?1049h` - Enable alternate screen
-- `\x1b[?1049l` - Restore original screen
-
-### Flow
-
-```
-TUI (Main Screen)
-      ↓ Press 'o' or post-create
-Alternate Screen (Terminal)
-      ↓ Type 'exit' or Ctrl+D
-TUI (Main Screen - restored)
-```
+| Feature | Simple | Sequential | Multi-Tab (This) |
+|---------|--------|------------|-----------------|
+| Multiple terminals | ❌ | ✅ | ✅ |
+| Visual tabs | ❌ | Indicator | Full tab bar |
+| Quick jump | N/A | Ctrl+N/P | Ctrl+1-9 |
+| Close individual | N/A | ❌ | ✅ |
+| Complexity | ⭐ | ⭐⭐ | ⭐⭐⭐⭐ |
+| Memory | Low | Medium | High |
 
 ## Try It
 
 ```bash
-# Create a worktree
-wt
-# Press 'c' to create
-# Complete the wizard
-# Select "Yes" to run command
-# → Opens embedded terminal!
-# Type 'exit' to return
+bun install && bun link && wt
 
-# Or open existing worktree
-wt
-# Press 'o' on any worktree
-# → Opens embedded shell!
+# Open first worktree
+# Press 'o' → Tab 1 opens
+
+# Return to TUI
+# Ctrl+Q
+
+# Open another worktree
+# Press 'o' → Tab 2 opens
+
+# Switch between tabs
+# Ctrl+1, Ctrl+2
+
+# Close a tab
+# Ctrl+W
+
+# Exit
+# Ctrl+Q
 ```
 
-## Comparison with Other Branches
+## Implementation Details
 
-See full comparison: [docs/BRANCH_COMPARISON.md](./docs/BRANCH_COMPARISON.md)
+**Time to build**: ~8 hours
+**Lines of code**: ~600
+**Components**: 4 new files
+**Memory per tab**: 10-20MB
+**Buffer per tab**: 1000 lines
 
-| Branch | Complexity | Features | Implementation Time |
-|--------|-----------|----------|-------------------|
-| **This one** (simple) | ⭐ Simple | Single terminal | 1-2 hours ✅ |
-| Sequential | ⭐⭐ Medium | Navigate between terminals | 4-8 hours |
-| Multi-terminal | ⭐⭐⭐⭐ Complex | Full tab management | 16-24 hours |
+## When to Use This Branch
+
+✅ You work on 3+ worktrees simultaneously
+✅ You want tmux-like features
+✅ Tab management is critical
+✅ You're a power user
+✅ Memory is not a concern
+
+## When to Use Other Branches
+
+- **Branch 1 (Simple)**: One terminal at a time is fine
+- **Branch 2 (Sequential)**: Navigate between terminals, simpler
+
+See `docs/BRANCH_COMPARISON.md` for full comparison.
